@@ -23,7 +23,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 ## 📊 System Architecture
 ![System Flowchart](Flowchart.png)
 
-A brief Flowchart from initial contact to follow-up care*
+A brief Flowchart from initial contact to follow-up care.
 
 ---
 
@@ -153,11 +153,11 @@ A brief Flowchart from initial contact to follow-up care*
 
 ### 3. Vapi.ai Setup
 - Create three agents in Vapi dashboard (Neha, Priya, Anita)
-- Upload conversation prompts from `Agent Prompts` folder
+- Upload conversation prompts from [`Agent Prompts`](Agent%20Prompts) folder
 - Configure agent functions:
-  - Get-Slots() - Calendar availability check
-  - Book_Slot() - Slot reservation
-  - Cancel_Slot() - Appointment cancellation
+  - [`Get-Slots()`](vapi_functions/Get-Slot.txt) - Calendar availability check
+  - [`Book_Slot()`](vapi_functions/Book_Slot.txt) - Slot reservation
+  - [`Cancel_Slot()`](vapi_functions/Cancel_Slot.txt)) - Appointment cancellation
 - Test each agent's conversation flow
 
 ### 4. Integration Configuration
