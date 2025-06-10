@@ -1,8 +1,21 @@
-# 🧠 2Care.ai Vapi Voice Agent System
+# 🏥 2Care.ai Voice Agent System
 
-A fully automated, human-like **Voice Agent Suite** for 2Care.ai — built using [Vapi](https://www.vapi.ai/) and [n8n](https://n8n.io). This system includes three specialized AI agents — **Neha**, **Priya**, and **Anita** — designed to manage the full lifecycle of patient engagement through natural, real-time voice conversations.
+A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. Our system manages the complete patient journey from initial contact to follow-up care through natural voice conversations, making healthcare more accessible and efficient.
 
-> From onboarding and appointment scheduling to reminders and post-care check-ins — everything is handled hands-free, using voice.
+## 🎯 Our Agents
+
+| Agent | Phone Number | Primary Role |
+|-------|-------------|--------------|
+| **Neha** | (9045) | Patient Onboarding & Scheduling |
+| **Priya** | (1234) | Appointment Reminders & Rescheduling |
+| **Anita** | (9876) | Post-Visit Care & Health Check-ins |
+
+## 🛠️ Tech Stack
+
+[![Vapi.ai](https://img.shields.io/badge/Vapi.ai-Voice%20AI-blue)](https://www.vapi.ai)
+[![n8n](https://img.shields.io/badge/n8n-Workflow%20Automation-orange)](https://n8n.io)
+[![Twilio](https://img.shields.io/badge/Twilio-Communications-red)](https://www.twilio.com)
+[![Airtable](https://img.shields.io/badge/Airtable-Database-green)](https://www.airtable.com)
 
 ---
 
@@ -55,13 +68,56 @@ A fully automated, human-like **Voice Agent Suite** for 2Care.ai — built using
 
 ---
 
-## 🧰 Tech Stack
+## 🤖 Agent Details
 
-- **Vapi** – Multimodal Voice AI Interface (STT + LLM + TTS)
-- **n8n** – Low-code automation to manage data flow, webhooks, database actions
-- **Supabase** – Patient records, slot management, and health data storage
-- **OpenAI / Claude** – Language models for contextual awareness and summarization
-- **Google Meet** – Used for all appointment consultations
+### 1. Neha - Patient Onboarding Specialist
+- **Role**: Initial patient contact and scheduling
+- **Use Cases**:
+  - Patient information collection
+  - Family member discovery calls
+  - Appointment scheduling
+  - General inquiries handling
+- **Prompt**: [View Neha's Conversation Flow](Agent%20Prompts/Neha%20Intro.txt)
+- **Active Hours**: 24/7
+
+### 2. Priya - Appointment Manager
+- **Role**: Appointment coordination and reminders
+- **Use Cases**:
+  - 2-hour appointment reminders
+  - Rescheduling requests
+  - Pre-visit instructions
+  - Last-minute cancellations
+- **Prompt**: [View Priya's Conversation Flow](Agent%20Prompts/Priya%20Reminder.txt)
+- **Active Hours**: Based on appointment schedule
+
+### 3. Anita - Follow-up Care Specialist
+- **Role**: Post-appointment care and monitoring
+- **Use Cases**:
+  - 2-week health check-ins
+  - Progress monitoring
+  - Treatment adherence checks
+  - Care plan upgrades
+- **Prompt**: [View Anita's Conversation Flow](Agent%20Prompts/Anita%203%20Week%20Report.txt)
+- **Active Hours**: Business hours only
+
+## 🔄 Workflow Automation
+
+### 1. Call Scheduling System
+![Neha's Call Flow](Screenshots/Neha%20Workflow.png)
+- **Workflow File**: [Call_Scheduling____2care_ai.json](n8n%20Workflows/Call_Scheduling____2care_ai.json)
+- **Purpose**: Manages the entire scheduling pipeline from initial contact to appointment confirmation
+
+### 2. Patient Reminder System
+![Priya's Reminder Flow](Screenshots/Priya%20Workflow.png)
+- **Workflow File**: [Patient_Reminder____2care_ai.json](n8n%20Workflows/Patient_Reminder____2care_ai.json)
+- **Purpose**: Automates appointment reminders and handles rescheduling requests
+
+## 🛠️ Technical Implementation
+
+- **Vapi.ai**: Powers our conversational AI with advanced speech recognition and natural language processing
+- **n8n**: Orchestrates workflows and integrates various services
+- **Twilio**: Handles voice calls and SMS communications
+- **Airtable**: Stores patient data, appointment schedules, and interaction logs
 
 ---
 
