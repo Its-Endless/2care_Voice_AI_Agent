@@ -1,0 +1,2636 @@
+{
+  "name": "Call Scheduling <> 2care.ai",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ccabe9f4-7911-4488-a75b-7c5779fb2014",
+              "name": "=Date",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.Date }}"
+            },
+            {
+              "id": "b802d976-78f5-4c00-8764-f8c49eaded29",
+              "name": "endtime",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.end_time }}"
+            },
+            {
+              "id": "02d58122-6a0f-4bdb-9914-6f50d2af6df4",
+              "name": "starttime",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.start_time }}"
+            },
+            {
+              "id": "c1249493-a1d7-4a91-9468-9e5c49430d2e",
+              "name": "body.message.toolCalls[0].id",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b824d2d2-f03c-4f81-bfb9-8625b1f5de8d",
+      "name": "Input Arguments",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        240,
+        460
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "operation": "concatenateItems",
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "response",
+        "include": "allFieldsExcept",
+        "fieldsToExclude": "sort",
+        "options": {}
+      },
+      "id": "59f541b7-dc6b-49d7-93e5-73f65649a62a",
+      "name": "Format response",
+      "type": "n8n-nodes-base.itemLists",
+      "position": [
+        1780,
+        560
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "sort",
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "sort"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35f78889-c99e-4517-b88c-48a2b3d0bdb8",
+      "name": "Sort",
+      "type": "n8n-nodes-base.itemLists",
+      "position": [
+        1560,
+        560
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input data\nconst inputData = $input.all()[0].json.response;\n\n// Define workday hours in CST\nconst WORKDAY_START = \"09:00:00 CST\";\nconst WORKDAY_END = \"18:00:00 CST\";\nconst SLOT_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds\n\n// Helper to parse CST datetime strings\nconst parseCST = (datetime) => {\n  const parsedDate = new Date(datetime.replace(\" CST\", \"-06:00\"));\n  return isNaN(parsedDate) ? null : parsedDate;\n};\n\n// Function to generate 30-minute start times\nconst generateStartTimes = (start, end) => {\n  const startTimes = [];\n  let current = new Date(start);\n\n  while (current < end) {\n    startTimes.push(\n      current.toLocaleTimeString('en-US', {\n        timeZone: 'CST',\n        hour: '2-digit',\n        minute: '2-digit',\n      })\n    );\n    current = new Date(current.getTime() + SLOT_DURATION);\n  }\n\n  return startTimes;\n};\n\n// Function to find wide open ranges\nconst findWideOpenRanges = (startTimes) => {\n  if (startTimes.length < 3) return []; // Not enough slots for a wide open range\n\n  const ranges = [];\n  let rangeStart = null;\n  let consecutiveCount = 0;\n\n  for (let i = 0; i < startTimes.length - 1; i++) {\n    const currentTime = parseCST(`2000-01-01 ${startTimes[i]} CST`);\n    const nextTime = parseCST(`2000-01-01 ${startTimes[i + 1]} CST`);\n    const diff = nextTime - currentTime;\n\n    if (diff === SLOT_DURATION) {\n      consecutiveCount += 1;\n      if (rangeStart === null) rangeStart = startTimes[i];\n    } else {\n      if (consecutiveCount >= 2) {\n        ranges.push(`${rangeStart} to ${startTimes[i]}`);\n      }\n      rangeStart = null;\n      consecutiveCount = 0;\n    }\n  }\n\n  // Handle the final range\n  if (consecutiveCount >= 2) {\n    ranges.push(`${rangeStart} to ${startTimes[startTimes.length - 1]}`);\n  }\n\n  return ranges;\n};\n\n// Group meetings by date, ignoring invalid dates\nconst meetingsByDate = inputData.reduce((acc, meeting) => {\n  const start = parseCST(meeting.start);\n  const end = parseCST(meeting.end);\n\n  if (!start || !end) {\n    return acc; // Ignore invalid dates\n  }\n\n  const dateKey = start.toISOString().split('T')[0];\n\n  if (!acc[dateKey]) {\n    acc[dateKey] = [];\n  }\n\n  acc[dateKey].push({ start, end });\n  return acc;\n}, {});\n\n// Generate availability\nconst availability = Object.keys(meetingsByDate)\n  .filter((date) => {\n    // Exclude Saturdays (6) and Sundays (0)\n    const dayOfWeek = new Date(date).getUTCDay();\n    return dayOfWeek !== 0 && dayOfWeek !== 6;\n  })\n  .map((date) => {\n    const workdayStart = parseCST(`${date} ${WORKDAY_START}`);\n    const workdayEnd = parseCST(`${date} ${WORKDAY_END}`);\n\n    const dayMeetings = meetingsByDate[date].sort((a, b) => a.start - b.start);\n\n    let availableStartTimes = [];\n    let lastEnd = workdayStart;\n\n    for (const meeting of dayMeetings) {\n      if (meeting.start > lastEnd) {\n        availableStartTimes = availableStartTimes.concat(generateStartTimes(lastEnd, meeting.start));\n      }\n      lastEnd = meeting.end > lastEnd ? meeting.end : lastEnd;\n    }\n\n    if (lastEnd < workdayEnd) {\n      availableStartTimes = availableStartTimes.concat(generateStartTimes(lastEnd, workdayEnd));\n    }\n\n    const wideOpenRanges = findWideOpenRanges(availableStartTimes);\n\n    return {\n      date: new Date(date).toLocaleDateString('en-US', {\n        weekday: 'long',\n        year: 'numeric',\n        month: 'long',\n        day: 'numeric',\n      }),\n      availableStartTimes,\n      wideOpenRanges,\n    };\n  });\n\n// Format output as plaintext\nconst availableTimes = availability\n  .map(({ date, availableStartTimes, wideOpenRanges }) => {\n    const times = availableStartTimes.map((time) => `- ${time}`).join('\\n');\n    const ranges = wideOpenRanges.length\n      ? `Wide Open Ranges:\\n${wideOpenRanges.map((range) => `- ${range}`).join('\\n')}`\n      : \"Wide Open Ranges: None\";\n\n    return `### ${date}\\nAvailable Start Times:\\n${times}\\n\\n${ranges}`;\n  })\n  .join('\\n\\n');\n\n// Set the output\nreturn {\n  json: {\n    availableTimes,\n  },\n};\n"
+      },
+      "id": "57eca22d-55b7-4397-90dd-702873b145b4",
+      "name": "Available Start Times & Ranges",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2000,
+        560
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const flattenSlots = (data) => {\n  // If data is missing or empty, return an empty array of slots\n  if (!data) {\n    return { slots: [] };\n  }\n\n  // data is an object whose keys are dates\n  // each date key has an array of slot objects\n  // we just need to flatten them all into one array\n  const flattened = Object.values(data).flat();  // merges all arrays from each date key\n\n  // Return a new object with a single 'slots' array\n  return { slots: flattened };\n};\n\n// Then assign the flattened slots back to $input.item.json.data\n$input.item.json.data = flattenSlots($input.item.json.data);\nreturn $input.item;\n"
+      },
+      "id": "8d635b4c-3c64-44d3-9767-acee6f94a21f",
+      "name": "Flatten Slots",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2220,
+        560
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function formatTimeSlot(dateString) {\n  // Format options for date/time with America/Chicago timezone\n  const options = {\n    timeZone: 'America/Chicago',\n    weekday: 'long',\n    month: 'long',\n    day: 'numeric',\n    hour: 'numeric',\n    minute: 'numeric',\n    hour12: true\n  };\n\n  // Create a formatter with timezone support\n  const dateFormatter = new Intl.DateTimeFormat('en-US', options);\n  \n  // Format the date/time string\n  return dateFormatter.format(new Date(dateString));\n}\n\n// Process each slot and add formatted time strings to the result\nconst slots = $input.item.json.data.slots;\nconst formattedSlots = slots.map(slot => formatTimeSlot(slot.start));\n\n// Attach formatted results to the output\n$input.item.json.data.slots = formattedSlots;\n\nreturn $input.item;\n"
+      },
+      "id": "762fe493-0fe2-4a89-983d-b88bb8c19de9",
+      "name": "Enrich Date",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2440,
+        560
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5cb05b10-e916-459e-84a2-9c314a859a07",
+              "name": "results[0].toolCallId",
+              "type": "string",
+              "value": "={{ $('Input Arguments').item.json.body.message.toolCalls[0].id }}"
+            },
+            {
+              "id": "552246f9-7afd-404e-9fb3-cb38c7447359",
+              "name": "results[0].result",
+              "type": "string",
+              "value": "={{ $json.availableTimes }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "75d9b39e-5519-43df-a659-d20a88ef7057",
+      "name": "Build Response Payload",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2660,
+        560
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "05bbc797-b781-489c-ab70-e234fe17eb62",
+              "name": "id",
+              "type": "number",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "4bb68abf-18c8-4445-b446-21667abd95aa",
+              "name": "description",
+              "type": "string",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "id": "74a98b77-b9fe-40cc-84c8-fc7303c5cfa6",
+              "name": "startTime",
+              "type": "string",
+              "value": "={{ $json.start.dateTime }}"
+            },
+            {
+              "id": "2934d6a7-9e6b-4038-891c-0b05ba18cb21",
+              "name": "endTime",
+              "type": "string",
+              "value": "={{ $json.end.dateTime }}"
+            },
+            {
+              "id": "10f091c8-5e52-40dc-a294-87625be9af99",
+              "name": "status",
+              "type": "string",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "id": "cdc5e1ab-a29b-447f-8343-ff1c1b168717",
+              "name": "Timezone",
+              "type": "string",
+              "value": "={{ $json.end.timeZone }}"
+            },
+            {
+              "id": "f5b6820c-ab4b-496c-9957-f86753243388",
+              "name": "attendees",
+              "type": "array",
+              "value": "={{ $json.attendees }}"
+            },
+            {
+              "id": "b39a06a5-4fbf-4fdf-9d9a-a07dcb37d157",
+              "name": "meetLink",
+              "type": "string",
+              "value": "={{ $json.hangoutLink }}"
+            },
+            {
+              "id": "345f49fc-93bc-48b8-9ced-326139a82119",
+              "name": "Title",
+              "type": "string",
+              "value": "={{ $json.summary }}"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "id": "6652659a-5304-4a6e-b0f2-2b6fe63350c1",
+      "name": "Booking Payload",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1120,
+        820
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "685c67c7-a30b-4bcc-b9ba-827c4b570548",
+              "name": "results[0].result",
+              "type": "string",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "id": "95a4c91d-8bb9-4438-888e-2082eaec4011",
+              "name": "toolCallId[0].result",
+              "value": "={{ $('bookslots_tool').item.json.body.message.toolCalls[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13dd3927-0897-465b-ae4c-1b9ba47020c3",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1340,
+        820
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function replaceValue(value) {\n  if (error.message.include('no_available_users_found_error')) {\n    return \"This time slot is no longer available.\";\n  }\n  return value;\n}\n\n$input.item.json.message = replaceValue($input.item.json.error.description);\n\nreturn $input.item;"
+      },
+      "id": "f934eec9-47c3-4eb0-8b38-a732a54b4fc0",
+      "name": "Add Friendly Error",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1120,
+        1020
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2c3894da-7bf7-4a35-95c0-d3d9199dd0ad",
+              "name": "results[0].toolCallId",
+              "type": "string",
+              "value": "={{ $('Input Arguments from booking tools').item.json.toolCallId }}"
+            },
+            {
+              "id": "93e45166-de94-4fa5-9148-2b8d0e4b960c",
+              "name": "results[0].result",
+              "type": "string",
+              "value": "={{ $json.message || $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8f2dd1d9-fd21-463b-9331-aa9ce278b58e",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1340,
+        1020
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e0af7f69-0c89-4a02-a49f-dd5a90e31dff",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ ($json.email || \"\").isEmail() }}",
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "258c0935-2ec5-47e9-8d3d-e6286bdfa49c",
+      "name": "Has all information",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        680,
+        1020
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "045beb1f-7641-4392-aa20-5c2c1e1e6815",
+      "name": "Respond with Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1120,
+        1220
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5cb05b10-e916-459e-84a2-9c314a859a07",
+              "name": "results[0].toolCallId",
+              "type": "string",
+              "value": "={{ $('Input Arguments from booking tools').item.json.toolCallId }}"
+            },
+            {
+              "id": "552246f9-7afd-404e-9fb3-cb38c7447359",
+              "name": "results[0].result",
+              "type": "string",
+              "value": "=You must provide an email, name and notes to call this tool"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "17838cb2-e552-4b97-b905-6990f46fd372",
+      "name": "Build Error Response Payload",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        900,
+        1220
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "# Get Slots",
+        "height": 80,
+        "width": 190,
+        "color": 4
+      },
+      "id": "aae01d76-552a-432a-9df6-dec47dc598e8",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -20,
+        340
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "# Book Slot",
+        "height": 80,
+        "width": 190,
+        "color": 5
+      },
+      "id": "46600dec-5004-48ac-b8fd-488b4ce85254",
+      "name": "Sticky Note BookSlot Webhook",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        900
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "# Cancel Slots",
+        "height": 80,
+        "width": 250,
+        "color": 3
+      },
+      "id": "d6c37480-9d06-44ee-87cf-f9e723d2254e",
+      "name": "Sticky Note CancelSlot Webhook",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        20,
+        1460
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "getslots",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "24488e80-91a5-4049-b821-5862742a30f5",
+      "name": "Getslot_tool",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        20,
+        460
+      ],
+      "webhookId": "42afdbc1-afd0-4d65-a713-cf7a59062d6c",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "support@2care.ai",
+          "mode": "list",
+          "cachedResultName": "support@2care.ai"
+        },
+        "timeMin": "={{ $json.start }}",
+        "timeMax": "={{ $json.end }}",
+        "options": {}
+      },
+      "id": "875382fa-add8-40ec-bd8c-b13930d2010d",
+      "name": "Check Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "position": [
+        680,
+        460
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "XEIToACDxkmWeK7q",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $('Getslot_tool').first().json.body.message.toolCalls[0].id }}\",\n            \"result\":\"available:{{ $json.available }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "id": "74d59dff-7879-4877-94bf-2ef5b3968951",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1340,
+        360
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "4a8741a2-a903-4fb7-b0a3-5c74c7eea6ca",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.available }}",
+              "rightValue": "="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2bcba18e-9e3b-46a3-b6f1-da6b95170bae",
+      "name": "Check if time is available or not",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        900,
+        460
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f582d965-af15-4ecf-8a8c-d8bf6c0d15c1",
+              "name": "body.message.toolCalls[0].id",
+              "type": "string",
+              "value": "={{ $('Input Arguments').item.json.body.message.toolCalls[0].id }}"
+            },
+            {
+              "id": "834ee925-5c8d-4e46-aeee-f399dc1ff40c",
+              "name": "available",
+              "type": "boolean",
+              "value": "={{ $json.available }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e7a5c717-bb77-4a20-86a2-912c1f17f185",
+      "name": "Time available (true) & Call_id",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1120,
+        360
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "support@2care.ai",
+          "mode": "list",
+          "cachedResultName": "support@2care.ai"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $now.toISO() }}",
+          "timeMax": "={{ $now.plus(2, 'week').toISO() }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "4e01babd-24e0-4d69-bb23-66f6a65688e5",
+      "name": "Get All Calendar Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "position": [
+        1120,
+        560
+      ],
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "XEIToACDxkmWeK7q",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1045b97f-c76f-450e-8f57-008602000848",
+              "name": "start",
+              "type": "string",
+              "value": "={{ DateTime.fromISO($json.start.dateTime).toLocaleString(DateTime.DATE_HUGE) }}, {{ DateTime.fromISO($json.start.dateTime).toLocaleString(DateTime.TIME_24_WITH_SHORT_OFFSET) }}"
+            },
+            {
+              "id": "457e3a2b-d33e-4a65-b2da-d19ad9d754ac",
+              "name": "end",
+              "type": "string",
+              "value": "={{ DateTime.fromISO($json.end.dateTime).toLocaleString(DateTime.DATE_HUGE) }}, {{ DateTime.fromISO($json.end.dateTime).toLocaleString(DateTime.TIME_24_WITH_SHORT_OFFSET) }}"
+            },
+            {
+              "id": "b6802452-557e-4568-af14-4574e8ecc013",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.summary }}"
+            },
+            {
+              "id": "799b656f-68b6-467c-88a1-217ff7c7801b",
+              "name": "sort",
+              "type": "string",
+              "value": "={{ $json.start.dateTime }}"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "id": "fd9df7c1-9cbb-46e9-816d-da4f430255c7",
+      "name": "Extract start, end and name",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1340,
+        560
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data for the first item\nconst inputData = $input.first().json;\nconsole.log(\"Input Data:\", inputData); // Log input for debugging\n\n// Access the message string from the correct path within the input structure.\n// The input comes from the \"Build Response Payload\" node, which structures data under 'results'.\n// Use optional chaining (?.) for safety in case the structure is not as expected.\nlet message = inputData.results?.[0]?.result;\n\n// Check if the message was found and is a string\nif (typeof message !== 'string') {\n    console.error(\"Could not find the message string at inputData.results[0].result or it's not a string. Input:\", inputData);\n    // Return an object with an empty message or an error indicator\n    return { message: \"\" }; // Or potentially throw an error: throw new Error(\"Input message not found or not a string\");\n}\n\n// Start cleaning the message string\n\n// 1. Replace the literal string \"\\\\n\" (backslash followed by n) with a space.\n// This handles the newline representation seen in the input screenshot.\nlet cleanedMessage = message.replace(/\\\\n/g, ' ');\n\n// 2. Remove spaces immediately surrounding colons (e.g., \"Times : \" becomes \"Times:\").\ncleanedMessage = cleanedMessage.replace(/\\s*:\\s*/g, ':');\n\n// 3. Replace sequences of multiple whitespace characters (including spaces from replaced \\n)\n// with a single space. Then, trim any leading or trailing whitespace from the result.\ncleanedMessage = cleanedMessage.replace(/\\s+/g, ' ').trim();\n\n// Create the final output JSON object containing the cleaned message.\nconst output = {\n    message: cleanedMessage\n};\n\n// Return the output object. This will be the output of the Code node.\nreturn output;"
+      },
+      "id": "96d18136-919f-429e-b45c-80c160f83d63",
+      "name": "Convert into Json format for Vapi",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2880,
+        560
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $('Getslot_tool').first().json.body.message.toolCalls[0].id }}\",\n            \"result\":\"The original time is not available, here are available slots:{{ $json.message }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "id": "7c587b37-9b2b-4cc7-8ce3-a743ebbe5c18",
+      "name": "Response to Vapi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        3100,
+        560
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bookslots",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5fd31c75-f428-4642-9dd6-93e72a2420c4",
+      "name": "bookslots_tool",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        20,
+        1020
+      ],
+      "webhookId": "42afdbc1-afd0-4d65-a713-cf7a59062d6c",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "12aeec42-9414-4d43-8837-1ff747f49305",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.name }}"
+            },
+            {
+              "id": "8e0fcd93-90b2-48d6-a4c2-eea0dea9798e",
+              "name": "age",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.age }}",
+              "type": "string"
+            },
+            {
+              "id": "4afebb40-6810-492c-a77e-d23a344dfad1",
+              "name": "phone_number",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "492186b8-e3a3-4ab9-87f4-45d8cbc38c13",
+              "name": "=date",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.date }}"
+            },
+            {
+              "id": "36673f27-c026-4ad9-81da-ad11e71bbfb6",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.email }}"
+            },
+            {
+              "id": "783cb161-65e4-4829-ac90-5c6c2c55585f",
+              "name": "starttime",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.start_time }}"
+            },
+            {
+              "id": "bfcdade9-14c8-4867-8a22-3865a2bcc116",
+              "name": "endtime",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.end_time }}"
+            },
+            {
+              "id": "efa34e7a-6ac5-4fd4-a0c7-2e8dc00ef868",
+              "name": "Reason_for_visit",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.Reason_for_visit }}",
+              "type": "string"
+            },
+            {
+              "id": "30d25f03-b68b-47f8-a30d-fd5258785aac",
+              "name": "past_medical_records",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.past_medical_records }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5f4c8b4e-3073-4833-8743-66717cac493d",
+      "name": "Input Arguments from booking tools",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        240,
+        1020
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "support@2care.ai",
+          "mode": "list",
+          "cachedResultName": "support@2care.ai"
+        },
+        "start": "={{ $json.start }}",
+        "end": "={{ $json.end }}",
+        "additionalFields": {
+          "allday": "no",
+          "attendees": [
+            "={{ $json.email }}"
+          ],
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "description": "=Medical Checkup\n\nPatient Details : \nName : {{ $json.name }}\nAge : {{ $json.age }}\nReason For Visit : {{ $json.Reason_for_visit }}\n",
+          "showMeAs": "opaque",
+          "summary": "Medical Appointment"
+        }
+      },
+      "id": "d9adb728-d4f1-4d55-89e7-01b60931f871",
+      "name": "Create Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "position": [
+        900,
+        920
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "XEIToACDxkmWeK7q",
+          "name": "Google Calendar account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $json.toolCallId[0].result }}\",\n            \"result\":\"available:{{ $json.results[0].result }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "id": "7e2e7cbe-c39c-4242-9011-3f862865a230",
+      "name": "Respond to Vapi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1560,
+        920
+      ],
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "932dd430-309b-4d3b-8bf6-768f84fd2dd2",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.results[0].result }}",
+              "rightValue": "=confirmed"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "0eda51a4-d394-4df5-b420-6b0d6bbb1c34",
+      "name": "If the booking is confirmed then true",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1780,
+        920
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b103265d-86da-4256-994d-85a78f33f933",
+              "name": "startTime",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.startTime }}"
+            },
+            {
+              "id": "a8e6e9c5-6ebb-48d8-951f-b007bed2421d",
+              "name": "endTime",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.endTime }}"
+            },
+            {
+              "id": "d4bcb1d1-043a-4205-8488-0a67b4e7b582",
+              "name": "status",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.status }}"
+            },
+            {
+              "id": "92ac8c99-ad94-4b3c-9c5e-ba032dac2255",
+              "name": "description",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.description }}"
+            },
+            {
+              "id": "98c5653d-1e0e-4a6a-8630-17802d437593",
+              "name": "attendees[0].email",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.attendees[0].email }}"
+            },
+            {
+              "id": "f94bdfc1-dc74-4675-ad29-19244fb21ebe",
+              "name": "attendees[0].responseStatus",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.attendees[0].responseStatus }}"
+            },
+            {
+              "id": "12bd5ed5-4934-4c19-a9b9-54fe989eaa4f",
+              "name": "meetLink",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.meetLink }}"
+            },
+            {
+              "id": "5b1f9356-7d62-4999-ae4e-86f3f20d72bf",
+              "name": "attendee.name",
+              "type": "string",
+              "value": "={{ $('Input Arguments from booking tools').item.json.name }}"
+            },
+            {
+              "id": "6e93805e-8754-4f92-870f-7b46525f3eb3",
+              "name": "call.id",
+              "type": "string",
+              "value": "={{ $('bookslots_tool').item.json.body.message.call.id }}"
+            },
+            {
+              "id": "f174e2be-3230-4fc9-970b-971aff6e9b8e",
+              "name": "assistant.name",
+              "type": "string",
+              "value": "={{ $('bookslots_tool').item.json.body.message.assistant.name }}"
+            },
+            {
+              "id": "a4bc9d70-7d51-487f-b622-433e767ef71f",
+              "name": "event.id",
+              "type": "string",
+              "value": "={{ $('Create Event').item.json.id }}"
+            },
+            {
+              "id": "9259b1d3-3658-4ab5-b434-364e6a84d145",
+              "name": "Title",
+              "type": "string",
+              "value": "={{ $('Booking Payload').item.json.Title }}"
+            },
+            {
+              "id": "678e783a-1cf8-4606-a218-6b443e085fac",
+              "name": "Whatsapp Number",
+              "value": "={{ $('Code2').item.json.phone_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6dace052-2337-4c95-ace6-62be88973abb",
+      "name": "Information to be Saved in Airtable",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2000,
+        920
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHKzG5xbBCrMRMR",
+          "mode": "list",
+          "cachedResultName": "Patient Info",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Input Arguments from booking tools').item.json.email }}",
+            "Name": "={{ $('Input Arguments from booking tools').item.json.name }}",
+            "Age": "={{ $('Input Arguments from booking tools').item.json.age }}",
+            "Whatsapp number": "={{ $json['Whatsapp Number'] }}",
+            "Appointment date": "={{ $('Input Arguments from booking tools').item.json.date }}",
+            "Appointment time": "={{ $('Input Arguments from booking tools').item.json.starttime }}",
+            "Reason for call": "={{ $('Input Arguments from booking tools').item.json.Reason_for_visit }}",
+            "Mail Send Or Not": "No",
+            "Whatsapp Send or Not": "No",
+            "Patient reminder call": "No",
+            "Calendar event id": "={{ $('Create Event').item.json.id }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Age",
+              "displayName": "Age",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Whatsapp number",
+              "displayName": "Whatsapp number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Appointment date",
+              "displayName": "Appointment date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Appointment time",
+              "displayName": "Appointment time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reason for call",
+              "displayName": "Reason for call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Call Summary",
+              "displayName": "Call Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mail Send Or Not",
+              "displayName": "Mail Send Or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Whatsapp Send or Not",
+              "displayName": "Whatsapp Send or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Patient reminder call",
+              "displayName": "Patient reminder call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Calendar event id",
+              "displayName": "Calendar event id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "94583488-f22d-4474-88af-2663e9d80260",
+      "name": "Logs the confirmed booking details",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        2220,
+        900
+      ],
+      "typeVersion": 2.1,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cancelslots",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f0fba0ec-de87-4f4c-8a41-0a6f6846a1af",
+      "name": "CancelSlots_tool",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        20,
+        1580
+      ],
+      "webhookId": "00fedd5a-c03d-4302-b8e0-22c79f26ed05",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f6388ab-a233-4643-9b28-917ad6bdfe22",
+              "name": "Calls[0].id",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].id }}"
+            },
+            {
+              "id": "40888d2c-b99d-401d-a6b9-944ba41543c6",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.name }}"
+            },
+            {
+              "id": "17be6cf6-8c48-4a4e-a0e8-b5b714f94242",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.email }}"
+            },
+            {
+              "id": "5f473615-316a-4869-8b48-69e8c338b1a9",
+              "name": "date",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.date }}",
+              "type": "string"
+            },
+            {
+              "id": "d06fd547-39c1-457b-8422-393f140aead6",
+              "name": "starttime",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.start_time }}"
+            },
+            {
+              "id": "8d528786-75d7-466e-8e8f-2013e4638bc2",
+              "name": "customer_number",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.phone_number }}"
+            },
+            {
+              "id": "0a0243b2-afc4-44f1-92cd-81572df79cc5",
+              "name": "Cancelnotes",
+              "type": "string",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.cancel_note }}"
+            },
+            {
+              "id": "b2fb0887-5545-409c-bba8-fae76a71f660",
+              "name": "call.id",
+              "type": "string",
+              "value": "={{ $json.body.message.call.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "93155ebb-a099-4b18-ba86-b0015b2bae1c",
+      "name": "Input Arguments from cancelslot tool",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        240,
+        1580
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "87304425-5f17-4637-8aa3-cd84b2f8d856",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.name }}",
+              "rightValue": ""
+            },
+            {
+              "id": "fdc6ffb0-f234-4869-8f5e-482c394ab860",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.email }}",
+              "rightValue": ""
+            },
+            {
+              "id": "c0b869e4-9490-4c01-b138-835bb34eb1ba",
+              "operator": {
+                "type": "dateTime",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.starttime }}",
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "48766c56-8bf1-4b34-a6ab-a5644b5a0cf7",
+      "name": "Checks if required info is provided for cancelation",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        460,
+        1580
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHKzG5xbBCrMRMR",
+          "mode": "list",
+          "cachedResultName": "Patient Info",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+        },
+        "filterByFormula": "=AND(\n  {Email} = \"{{ $json.email }}\",\n  {Appointment time} = \"{{ $json.starttime }}\",\n  {Appointment date} = \"{{ $json.date }}\"\n)\n",
+        "options": {
+          "fields": [
+            "Email",
+            "Name",
+            "Appointment date",
+            "Appointment time",
+            "Calendar event id"
+          ]
+        }
+      },
+      "id": "cf952bf3-e166-4789-8de7-c7eb136b205a",
+      "name": "Finds the appointment record",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        680,
+        1480
+      ],
+      "typeVersion": 2.1,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5cb05b10-e916-459e-84a2-9c314a859a07",
+              "name": "results[0].toolCallId",
+              "type": "string",
+              "value": "={{ $('Input Arguments from booking tools').item.json.toolCallId }}"
+            },
+            {
+              "id": "552246f9-7afd-404e-9fb3-cb38c7447359",
+              "name": "results[0].result",
+              "type": "string",
+              "value": "=You must provide an email, name and starttime to call this tool"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48ddc8fb-c508-46d7-b048-98544172262c",
+      "name": "Build Error Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        680,
+        1680
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1467bb53-65bc-490b-90b5-fc72db9a7bcc",
+      "name": "Respond with Error to Vapi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        900,
+        1680
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "support@2care.ai",
+          "mode": "list",
+          "cachedResultName": "support@2care.ai"
+        },
+        "eventId": "={{ $json[\"Calendar event id\"] }}",
+        "options": {
+          "sendUpdates": "all"
+        }
+      },
+      "id": "236479d5-70af-4863-8275-7f68b7aef723",
+      "name": "Delete Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "position": [
+        900,
+        1480
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "XEIToACDxkmWeK7q",
+          "name": "Google Calendar account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRecord",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHKzG5xbBCrMRMR",
+          "mode": "list",
+          "cachedResultName": "Patient Info",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+        },
+        "id": "={{ $('Finds the appointment record').item.json.id }}"
+      },
+      "id": "55fa4d2a-70e6-4d4f-bdb8-971fed3ccdf2",
+      "name": "Update Airtable record",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        1120,
+        1480
+      ],
+      "typeVersion": 2.1,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "074d1ef3-e96b-4149-a12c-b8aa71c9c117",
+              "name": "results[0].toolCallId",
+              "type": "string",
+              "value": "={{ $('Input Arguments from cancelslot tool').item.json.Calls[0].id }}"
+            },
+            {
+              "id": "fecdbfb3-2faa-4489-b648-07746ee8fef4",
+              "name": "success",
+              "value": "={{ $json.deleted }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38e6b043-f90f-4e62-8832-ac4cc95c864a",
+      "name": "Call_id & Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1340,
+        1480
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"results\":[\n  {\n  \"toolCallId\":\"{{ $json.results[0].toolCallId }}\",\n  \"result\":\"{{ $json.success }}\"\n  }\n]\n}",
+        "options": {}
+      },
+      "id": "099ec83b-3acf-4985-a2c8-b005438bd428",
+      "name": "Respond to Vapi about cancelation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1560,
+        1480
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const date = item.json.Date;\n  const startTime = item.json.starttime;\n  const endTime = item.json.endtime;\n\n  return {\n    json: {\n      start: `${date}T${startTime}:00.000+05:30`,\n      end: `${date}T${endTime}:00.000+05:30`\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        460
+      ],
+      "id": "ad4ec6cf-ffcd-4b43-a983-2ddbaf087bd3",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const { date, starttime, endtime, ...rest } = item.json;\n\n  return {\n    json: {\n      ...rest,\n      start: `${date}T${starttime}:00.000+05:30`,\n      end: `${date}T${endtime}:00.000+05:30`\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        1020
+      ],
+      "id": "82f5d921-f24f-4727-b578-cab693337343",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "content": "# Call Result logs\nReceives call summary and recording details post-call.",
+        "height": 120,
+        "width": 390,
+        "color": 2
+      },
+      "id": "df4b59c9-4a7f-4f66-a21a-f944a680f709",
+      "name": "Sticky Note CallResults Webhook",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        20,
+        1980
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "callresults",
+        "options": {}
+      },
+      "id": "b3b68b4d-88c4-4fc3-8e98-58f75123f734",
+      "name": "call_results",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        20,
+        2200
+      ],
+      "webhookId": "4a6205cd-4277-4686-8008-540b802b99fe",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fd00208a-e833-4834-8c37-0034c44fb47d",
+              "name": "transcript",
+              "type": "string",
+              "value": "={{ $json.body.message.artifact.transcript }}"
+            },
+            {
+              "id": "b72ffa4d-aef3-4d7c-8b81-9238a3c5890b",
+              "name": "recordingUrl",
+              "type": "string",
+              "value": "={{ $json.body.message.artifact.recordingUrl }}"
+            },
+            {
+              "id": "e45d90de-0103-46ba-9fcb-f4c969816da0",
+              "name": "call.summary",
+              "type": "string",
+              "value": "={{ $json.body.message.analysis.summary }}"
+            },
+            {
+              "id": "b0a5557f-483f-47c9-955a-c12ce84f270b",
+              "name": "cost",
+              "type": "number",
+              "value": "={{ $json.body.message.cost }}"
+            },
+            {
+              "id": "2bfcfe4f-4eaf-4274-b3f2-cdaea8c2cc46",
+              "name": "call.id",
+              "type": "string",
+              "value": "={{ $json.body.message.call.id }}"
+            },
+            {
+              "id": "2b7b1638-0d0e-4c48-9989-287fd4e0babd",
+              "name": "call.orgId",
+              "type": "string",
+              "value": "={{ $json.body.message.call.orgId }}"
+            },
+            {
+              "id": "adf4d062-bbfd-4f97-bda4-bdfec1e40ee4",
+              "name": "assistant.name",
+              "type": "string",
+              "value": "={{ $json.body.message.assistant.name }}"
+            },
+            {
+              "id": "3c2af504-d320-45f0-9008-79b3bc1ff897",
+              "name": "startedAt",
+              "type": "string",
+              "value": "={{ $json.body.message.startedAt }}"
+            },
+            {
+              "id": "0486dbfa-ca10-45b5-a79a-3ce1064f13fa",
+              "name": "endedAt",
+              "type": "string",
+              "value": "={{ $json.body.message.endedAt }}"
+            },
+            {
+              "id": "bf97b5eb-5baa-4a87-b34e-2f64c97c0d42",
+              "name": "assistant.id",
+              "type": "string",
+              "value": "={{ $json.body.message.assistant.id }}"
+            },
+            {
+              "id": "58ee9b29-7aa1-4a15-bf83-606287a964a6",
+              "name": "assistant.model",
+              "type": "string",
+              "value": "={{ $json.body.message.assistant.model.model }}"
+            },
+            {
+              "id": "36e2bbef-e12d-4fc4-a0af-bb65aa446023",
+              "name": "body.message.assistant",
+              "type": "object",
+              "value": "={{ $json.body.message.assistant }}"
+            },
+            {
+              "id": "dfa93dbb-67dc-417b-874a-32fbd55d92b0",
+              "name": "assistantId",
+              "type": "string",
+              "value": "={{ $json.body.message.call.assistantId }}"
+            },
+            {
+              "id": "4bc2b480-92a1-470e-bdf0-d6609f346ed2",
+              "name": "body.message.assistant.model.emotionRecognitionEnabled",
+              "type": "boolean",
+              "value": "={{ $json.body.message.assistant.model.emotionRecognitionEnabled }}"
+            },
+            {
+              "id": "acb64bba-e295-4dd0-9ab3-b4166ef5d0ad",
+              "name": "customer.number",
+              "type": "string",
+              "value": "={{ $json.body.message.call.customer.number }}"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "id": "ba3401d9-9c9b-409d-896f-a92d74450a99",
+      "name": "All Input Arguments",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        240,
+        2200
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "sendTo": "=shubhgupta916@gmail.com",
+        "subject": "Medical Report Summary (2Care)",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      line-height: 1.6;\n      color: #333;\n    }\n    .section-title {\n      font-size: 18px;\n      font-weight: bold;\n      margin-top: 20px;\n    }\n    .details, .summary {\n      background-color: #f9f9f9;\n      padding: 12px;\n      border: 1px solid #ddd;\n      border-radius: 6px;\n      margin-top: 8px;\n    }\n    .details p, .summary p {\n      margin: 6px 0;\n    }\n  </style>\n</head>\n<body>\n\n  <div>\n  <div class=\"section-title\">Patient Details:</div>\n  <div class=\"details\">\n    <p><strong>Name:</strong> {{ $json.name }} </p>\n    <p><strong>Age:</strong> {{ $json.age }}</p>\n    <p><strong>Whatsapp No.:</strong> +91 {{ $json.whatsapp }}</p>\n    <p><strong>Email:</strong> {{ $json.email }}</p>\n    <p><strong>Reason For Visit:</strong> {{ $json.reasonForVisit }}</p>\n    <p><strong>Date to Visit:</strong> {{ $json.dateToVisit }}</p>\n    <p><strong>Time to Visit:</strong> {{ $json.timeToVisit }}</p>\n  </div>\n\n  <div class=\"section-title\">Call Summary:</div>\n  <div class=\"summary\">\n    <p>{{ $json.summary }}</p>\n  </div>\n</div>\n\n\n</body>\n</html>\n",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "support@2care.ai"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1280,
+        2040
+      ],
+      "id": "edd59261-5ba4-48f1-9ac3-f9ffe869d306",
+      "name": "Patient visit details to Doc Email",
+      "webhookId": "96823a21-e16c-4b87-8f9c-407fced821ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rWFi1BAZgdqG9kAy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize the following conversation transcript between an AI agent (FROM 2care named as Neha) and a user. Keep the summary between 3 to 4 sentences. Highlight the user’s intent, key details (such as name, contact info, and appointment details, date, and time), and the outcome.\nTranscript:\n{{ $json[\"transcript\"] }}",
+        "options": {
+          "systemMessage": "=You are a summarization assistant for medical conversation transcripts between a virtual healthcare agent and a user. Your task is to generate a clear, professional 3 to 4 sentence summary that captures:\n\nThe user’s full name and age (YEAR).\n\nThe reason for the visit (e.g., routine checkup, symptoms, concern).\n\nWhether they have any chronic health conditions or are on medications.\n\nThe outcome, such as appointment confirmation with date and time.\n\nMention Date and Time to Visit in Separate Components as well.\n\nAdditionally, based on the user’s action in the conversation (whether it’s for appointment booking, canceling, or rescheduling), generate the email subject line accordingly.\n\nBe concise and natural. Always mention the name, age, reason for visit, and whether the user has chronic health issues or not.\n\nOutput Format:\n\njson\nCopy\nEdit\n{\n  \"summary\": \"The user wants to schedule a dental checkup.\",\n  \"patientDetails\": {\n    \"name\": \"name goes here\",\n    \"age\": \"age goes here\",\n    \"whatsapp\": \"+91 9045904512\",\n    \"email\": \"hello@gmail.com\",\n    \"reasonForVisit\": \"reason goes here\",\n    \"Date to Visit\": \"2025-12-12\",\n    \"Time to Visit\": \"13:00\"\n  },\n  \"emailSubject\": \"Appointment Booking Confirmation\"\n}\n[ALWAYS RETURN EACH FIELD IN THE OUTPUT AND IF NOT FOUND IN THE DATA THEN RETURN IT AS \"\" EMPTY STRING, BUT ALWAYS RETURN ALL OF THEM]\n\nIMPORTANT:\n\nVERIFY DETAILS like name, age, and especially email. If the email has a space between letters or words (e.g., Neha Sharma at gmail dot com), you must merge them into a single string (e.g., nehasharma@gmail.com).\n\nIf an email domain is missing (like @gmail.com), add it, but only if the domain is not specified (some emails could have a domain other than @gmail.com).\n\nBased on the conversation context, the email subject should be one of the following:\n\n\"Appointment Booking Confirmation\" for booking appointments.\n\n\"Appointment Cancellation Confirmation\" for canceling appointments.\n\n\"Appointment Rescheduling Confirmation\" for rescheduling appointments.\n\nPlease ensure that these conditions are met when summarizing the transcript."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        680,
+        1940
+      ],
+      "id": "e128cfbc-9b32-4b4c-ac6f-079e7bbdf1af",
+      "name": "Generate Summary"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHKzG5xbBCrMRMR",
+          "mode": "list",
+          "cachedResultName": "Patient Info",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Code1').item.json.email }}",
+            "Call Summary": "={{ $('Code1').item.json.summary }}",
+            "Mail Send Or Not": "Yes",
+            "Whatsapp Send or Not": "No",
+            "Patient reminder call": "No",
+            "Age": "={{ $('Code1').item.json.age }}",
+            "Name": "={{ $('Code1').item.json.name }}",
+            "Appointment date": "={{ $('Code1').item.json.dateToVisit }}",
+            "Appointment time": "={{ $('Code1').item.json.timeToVisit }}",
+            "Whatsapp number": "={{ $('Code1').item.json.whatsapp }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Age",
+              "displayName": "Age",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Whatsapp number",
+              "displayName": "Whatsapp number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Appointment date",
+              "displayName": "Appointment date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Appointment time",
+              "displayName": "Appointment time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reason for call",
+              "displayName": "Reason for call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Call Summary",
+              "displayName": "Call Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mail Send Or Not",
+              "displayName": "Mail Send Or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Whatsapp Send or Not",
+              "displayName": "Whatsapp Send or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Patient reminder call",
+              "displayName": "Patient reminder call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Calendar event id",
+              "displayName": "Calendar event id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1720,
+        2040
+      ],
+      "id": "042611e9-f63c-4f9f-86ab-3be6571ba1f4",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "752a8704-1582-461c-9ce7-7246fab39582",
+              "leftValue": "={{ $json.transcript }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        2200
+      ],
+      "id": "69a45981-811e-422f-a93c-c444dc1e1321",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        760,
+        2340
+      ],
+      "id": "50d76ac8-61b7-4cb6-9df3-d3f92404423b",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        700,
+        2140
+      ],
+      "id": "1f5cb13e-5dc4-4efc-b3a8-7ee053126c3d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GrzkhvRN9DytMspc",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code1').item.json.email }}",
+        "subject": "={{ $('Code1').item.json.emailSubject }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      line-height: 1.6;\n      color: #333;\n      background-color: #f9f9f9;\n      padding: 20px;\n    }\n    .container {\n      background-color: #ffffff;\n      border: 1px solid #ddd;\n      border-radius: 8px;\n      padding: 20px;\n      max-width: 600px;\n      margin: auto;\n    }\n    .header {\n      font-size: 20px;\n      font-weight: bold;\n      color: #2a7ae2;\n      margin-bottom: 10px;\n    }\n    .section {\n      margin-bottom: 20px;\n    }\n    .label {\n      font-weight: bold;\n    }\n    .footer {\n      font-size: 14px;\n      color: #777;\n      margin-top: 30px;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n\n  <div class=\"container\">\n    <div class=\"header\">2Care Call Summary </div>\n\n    <div class=\"section\">\n  <p>Dear {{ $('Code1').item.json.name }},</p>\n  <p>Your appointment has been successfully scheduled.</p>\n</div>\n\n<div class=\"section\">\n  <p><span class=\"label\">Date To Visit: </span>{{ $('Code1').item.json.dateToVisit }}</p>\n  <p><span class=\"label\">Time To Visit: </span>{{ $('Code1').item.json.timeToVisit }}</p>\n  <p><span class=\"label\">Reason for Visit: </span>{{ $('Code1').item.json.reasonForVisit }}</p>\n</div>\n\n\n    <div class=\"section\">\n      <p>We look forward to seeing you then. If you have any questions or need to reschedule, feel free to contact us at +91 853789290</p>\n    </div>\n\n    <div class=\"footer\">\n      Thank you\n    </div>\n  </div>\n\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1500,
+        2040
+      ],
+      "id": "32c18488-31a6-4bf7-a880-c71321b60f82",
+      "name": "Gmail to Patient",
+      "webhookId": "6e96a9ab-c7da-42a6-a4a7-ecdaa72a02fb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rWFi1BAZgdqG9kAy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the incoming JSON string from the previous node\nconst rawOutput = $json[\"output\"];\n\n// Extract the JSON block inside the triple backticks\nconst jsonMatch = rawOutput.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n\nif (!jsonMatch || jsonMatch.length < 2) {\n  throw new Error(\"Failed to extract JSON from the string.\");\n}\n\n// Parse the extracted JSON string\nconst parsed = JSON.parse(jsonMatch[1]);\n\n// Extract fields\nconst patient = parsed.patientDetails;\n\n// Extract the email subject\nconst emailSubject = parsed.emailSubject || \"\";\n\nreturn [\n  {\n    json: {\n      name: patient.name || \"\",\n      age: patient.age || \"\",\n      whatsapp: patient.whatsapp || \"\",\n      email: patient.email || \"\",\n      reasonForVisit: patient.reasonForVisit || \"\",\n      dateToVisit: patient[\"Date to Visit\"] || \"\",\n      timeToVisit: patient[\"Time to Visit\"] || \"\",\n      summary: parsed.summary || \"\",\n      emailSubject: emailSubject || \"Call Details (2Care)\"// Include the email subject here\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        1940
+      ],
+      "id": "af1f1a96-228a-4073-8e46-b33d038de699",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2careform",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        20,
+        80
+      ],
+      "id": "c36d0c1c-e3c3-4bfb-a18d-55b43d4715f8",
+      "name": "Webhook",
+      "webhookId": "8c791a13-03c1-4908-88fd-375cfe63fd12"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer c8476f7f-df84-4775-8ee1-3c0344057a23"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"assistantId\": \"6934b4fb-de0a-43ce-8736-dce9b79600c1\",\n  \"phoneNumberId\": \"55652fcc-764e-4cee-98fa-64dd788f667c\",\n  \"customers\": [\n    {\n      \"number\": \"{{ $json.body.data.fields[1].value }}\",\n      \"name\": \"{{ $json.body.data.fields[0].value }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        80
+      ],
+      "id": "dabfc912-2800-40e6-90b1-38fd9cd13d5c",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "content": "# Calling Neha",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -40,
+        -40
+      ],
+      "typeVersion": 1,
+      "id": "9a486f21-aaea-4215-b0c7-3f010e904d3c",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input Arguments": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format response": {
+      "main": [
+        [
+          {
+            "node": "Available Start Times & Ranges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Format response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Available Start Times & Ranges": {
+      "main": [
+        [
+          {
+            "node": "Flatten Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Slots": {
+      "main": [
+        [
+          {
+            "node": "Enrich Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Date": {
+      "main": [
+        [
+          {
+            "node": "Build Response Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response Payload": {
+      "main": [
+        [
+          {
+            "node": "Convert into Json format for Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Payload": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Friendly Error": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has all information": {
+      "main": [
+        [
+          {
+            "node": "Create Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Response Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Response Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond with Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Getslot_tool": {
+      "main": [
+        [
+          {
+            "node": "Input Arguments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Check if time is available or not",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if time is available or not": {
+      "main": [
+        [
+          {
+            "node": "Time available (true) & Call_id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get All Calendar Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Time available (true) & Call_id": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Calendar Events": {
+      "main": [
+        [
+          {
+            "node": "Extract start, end and name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract start, end and name": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert into Json format for Vapi": {
+      "main": [
+        [
+          {
+            "node": "Response to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bookslots_tool": {
+      "main": [
+        [
+          {
+            "node": "Input Arguments from booking tools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Arguments from booking tools": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "main": [
+        [
+          {
+            "node": "Booking Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Friendly Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Vapi": {
+      "main": [
+        [
+          {
+            "node": "If the booking is confirmed then true",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If the booking is confirmed then true": {
+      "main": [
+        [
+          {
+            "node": "Information to be Saved in Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information to be Saved in Airtable": {
+      "main": [
+        [
+          {
+            "node": "Logs the confirmed booking details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CancelSlots_tool": {
+      "main": [
+        [
+          {
+            "node": "Input Arguments from cancelslot tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Arguments from cancelslot tool": {
+      "main": [
+        [
+          {
+            "node": "Checks if required info is provided for cancelation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks if required info is provided for cancelation": {
+      "main": [
+        [
+          {
+            "node": "Finds the appointment record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finds the appointment record": {
+      "main": [
+        [
+          {
+            "node": "Delete Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond with Error to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable record": {
+      "main": [
+        [
+          {
+            "node": "Call_id & Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call_id & Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi about cancelation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Has all information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "call_results": {
+      "main": [
+        [
+          {
+            "node": "All Input Arguments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Input Arguments": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patient visit details to Doc Email": {
+      "main": [
+        [
+          {
+            "node": "Gmail to Patient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail to Patient": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Patient visit details to Doc Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e0869c9a-991b-44fe-91c4-a6c2cafcc43c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a0a8ed84260f8d68688e141a2027026f354c377c7fd228996ae3205b00984ade"
+  },
+  "id": "i4qUcXhP4FdbVYjm",
+  "tags": []
+}

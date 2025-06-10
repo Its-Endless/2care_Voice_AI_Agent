@@ -1,0 +1,172 @@
+Here’s a comprehensive FAQ for 2care.ai, covering all visible features and services from your image, the thread, and best practices for AI agentic healthcare platforms. Each answer is concise, user-friendly, and tailored for quick reference.
+
+---
+
+## 2care.ai – Frequently Asked Questions (FAQ)
+
+---
+
+### General Platform
+
+**Q: What is 2care.ai?**  
+A: 2care.ai is the first AI agentic healthcare management platform. It acts as your personal AI health agent—helping you and your family manage health, monitor vitals, organize records, coordinate care, and stay prepared for emergencies, all in one place.
+
+**Q: What is a Personal AI Health Agent?**  
+A: Your Personal AI Health Agent is an intelligent assistant that monitors your health data, analyzes trends, sends timely alerts, coordinates care, and provides 24/7 support—so you never have to manage your health alone[1][2][3][5].
+
+---
+
+### Features & Services
+
+**Q: What does 'Customized Vitals' mean?**  
+A: Customized Vitals lets you track and monitor key health indicators (like blood pressure, sugar, pulse, etc.) tailored to your or your loved one’s specific health needs. The dashboard visualizes these trends for easy understanding[1].
+
+**Q: What is 'AI Report Summary'?**  
+A: The AI Report Summary automatically analyzes your uploaded medical reports and presents clear, jargon-free insights, highlighting trends and important changes for you and your care team[1][5].
+
+**Q: How does 'Daily Health Monitoring' work?**  
+A: The platform continuously tracks your daily health data (like vitals, activity, sleep) and flags any concerning changes, helping you and your doctors stay proactive[1][5].
+
+**Q: What are 'Timely Alerts'?**  
+A: Timely Alerts are real-time notifications sent to you or your caregivers if your health data shows any concerning patterns, missed medications, or potential emergencies[1][5].
+
+**Q: What is the 'Emergency Response System'?**  
+A: This system provides instant SOS access. If you trigger an emergency alert, your care team and emergency contacts are notified, and the platform can help coordinate ambulance or urgent care services[1][4][5].
+
+**Q: What does 'Always on Care 24/7' mean?**  
+A: You have 24/7 access to AI-driven support, health monitoring, and escalation to human clinicians when needed—no hold music, no waiting[1][5].
+
+**Q: What are 'Doctor Check-ins'?**  
+A: Doctor Check-ins are regular virtual or phone consultations with healthcare professionals, scheduled automatically based on your health trends and needs[1][5].
+
+**Q: What is 'AI Maya – Personalized Health Agent'?**  
+A: AI Maya is your personalized digital health assistant that provides tailored health guidance, reminders, and insights, adapting as your needs change[1].
+
+**Q: What are 'Historical Data Records'?**  
+A: All your health data—vitals, reports, appointments, and notes—are securely stored and easily accessible for you and your care team to review anytime[1].
+
+---
+
+### Account & Plan Management
+
+**Q: What is included in each plan?**  
+A:  
+- **Premium Plan:** Unlimited AI report analysis, 24/7 WhatsApp health agent, unlimited vital alerts, monthly appointment and lab scheduling, unlimited support tickets, emergency support, doctor search for second opinions, medication reminders, and multi-specialist coordination.
+- **Comprehensive Plan:** All Premium features plus courier/porter service for records, ambulance emergency support, unlimited doctor consultations for second opinions, and enhanced care coordination.
+
+**Q: How do I change my subscription plan?**  
+A: Go to 'Settings' > 'Subscription' > 'Change Plan', select your new plan, and confirm. Changes take effect immediately.
+
+**Q: Can I cancel my subscription?**  
+A: Yes. Go to 'Settings' > 'Subscription' > 'Cancel'. You’ll retain access until your current billing period ends.
+
+---
+
+### Data & Security
+
+**Q: Is my health data secure?**  
+A: Absolutely. 2care.ai uses bank-level encryption and complies with HIPAA and other privacy standards. Your data is never shared without your consent[1][2].
+
+**Q: Can I add family members to my account?**  
+A: Yes. Tap 'Family' > 'Add Member' and enter their details. They’ll receive an invitation to connect and share health data.
+
+---
+
+### Emergency & Alerts
+
+**Q: How does the emergency button work?**  
+A: Press and hold the red SOS button for 3 seconds. It alerts your emergency contacts and can coordinate ambulance or urgent care if needed[1][4].
+
+**Q: Can I test the emergency features?**  
+A: Yes. Go to 'Settings' > 'Emergency' > 'Test Alert'. This sends a test message to your emergency contacts only.
+
+---
+
+### Notifications & Reminders
+
+**Q: How do I manage notifications?**  
+A: Go to 'Settings' > 'Notifications' to customize which alerts and reminders you want to receive and when.
+
+**Q: Why am I not getting medication reminders?**  
+A: Check 'Settings' > 'Medications' and ensure reminders are enabled and times are set correctly.
+
+---
+
+### Health Records & Coordination
+
+**Q: How does record management work?**  
+A: You can upload, sync, and organize all health records in one dashboard. The system integrates with Gmail, Google Drive, WhatsApp, and even allows for physical collection of documents if needed[1].
+
+**Q: What is the difference between daily monitoring and doctor check-ins?**  
+A: Daily monitoring is automated, continuous tracking of your health data by the AI agent. Doctor check-ins are scheduled consultations with a clinician, triggered by your trends or at regular intervals.
+
+**Q: How does care coordination work?**  
+A: The platform helps schedule and manage appointments, keeps all doctors updated, and ensures everyone involved in your care has access to the latest information[1][5].
+
+---
+
+### AI & Advanced Features
+
+**Q: What makes 2care.ai 'agentic' AI?**  
+A: Unlike traditional apps, 2care.ai’s AI agent doesn’t just follow instructions—it acts on your behalf: orchestrating care, analyzing data, scheduling follow-ups, and sending alerts automatically[3].
+
+**Q: How does the AI report analyzer differ from regular reports?**  
+A: The AI analyzer interprets your medical reports, highlights key trends, and explains results in simple language—no medical jargon.
+
+**Q: What is the benefit of having historical data records?**  
+A: It allows you and your care team to track progress over time, spot trends, and make more informed decisions.
+
+---
+
+### Emergency & Proactive Care
+
+**Q: How does the platform help in emergencies?**  
+A: With real-time monitoring, immediate alerts, and an integrated emergency response system, you’re always prepared. The system can notify your care team, coordinate ambulance support, and provide step-by-step emergency protocols[1][4].
+
+**Q: How does the platform help with proactive health management?**  
+A: By analyzing your daily health data, scheduling regular check-ins, and providing actionable insights, the AI agent helps you stay ahead of potential issues.
+
+---
+
+### Comparison & Plan Details
+
+**Q: What’s the difference between the Premium and Comprehensive plans?**  
+A: The Comprehensive plan offers all Premium features plus enhanced emergency support (ambulance, courier/porter), unlimited second opinions, and advanced care coordination for families needing complete peace of mind.
+
+**Q: Can I see a side-by-side comparison of plans?**  
+A: Yes. Visit 'Plans & Pricing' in your dashboard for a detailed comparison.
+
+---
+
+### Support
+
+**Q: How do I contact support?**  
+A: You can reach us 24/7 via the in-app chat, WhatsApp, or by calling our helpline listed in your dashboard.
+
+**Q: What if I have more questions?**  
+A: Our support team and your AI health agent are always available to assist you with any aspect of your health management.
+
+
+Q: What is the difference between the Personal AI Health Agent and Doctor Check-ins?
+A: The Personal AI Health Agent is an AI assistant that monitors your health and manages care 24/7. Doctor Check-ins are scheduled calls or virtual visits with real medical professionals for expert advice.
+
+Q: Can I switch from Premium to Comprehensive?
+A: Yes, you can upgrade or downgrade your plan anytime in your dashboard settings.
+
+Q: How can I share my reports?
+A: Upload your reports to the dashboard and share them via email, WhatsApp, Gmail, or Google Drive.
+
+Q: How does Gmail sync work?
+A: Go to the dashboard, click 'Upload Reports', and select 'Gmail' to import files from your email.
+
+Q: How does Google Drive sync work?
+A: Go to the dashboard, click 'Upload Reports', and select 'GDrive' to import files from your Google Drive.
+
+Q: Can I share my health data or reports on WhatsApp?
+A: Yes, select your report in the dashboard and choose 'Share via WhatsApp'.
+
+Q: What is the AI Report Summary?
+A: It’s an instant, easy-to-read summary of your medical reports, generated by AI.
+
+Q: How does the AI report analyzer differ from regular reports?
+A: The AI analyzer explains your reports in simple language, highlights trends, and removes medical jargon.
