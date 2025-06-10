@@ -1,5 +1,4 @@
 {
-  "name": "Patient Reminder <> 2care.ai",
   "nodes": [
     {
       "parameters": {
@@ -115,13 +114,13 @@
             {
               "id": "40003cb3-f076-4498-a231-efa30a001f29",
               "name": "Appointment_date",
-              "value": "={{ $json.Appointment_date }}",
+              "value": "={{ $json[\"Appointment date\"] }}",
               "type": "string"
             },
             {
               "id": "b029b3c3-dfd2-4c45-97d1-45c5c7404d62",
               "name": "Appointment_time",
-              "value": "={{ $json.Appointment_time }}",
+              "value": "={{ $json[\"Appointment time\"] }}",
               "type": "string"
             },
             {
@@ -131,21 +130,15 @@
               "type": "string"
             },
             {
-              "id": "6e4289cb-3c63-4c65-97d9-66fc7c7c9b66",
-              "name": "Visited_or_not",
-              "value": "={{ $json.Visited_or_not }}",
-              "type": "string"
-            },
-            {
               "id": "196f0e6f-080d-48c2-9cff-63c1424d2017",
               "name": "Reason_for_visit",
-              "value": "={{ $json.Reason_for_visit }}",
+              "value": "={{ $json[\"Reason for call\"] }}",
               "type": "string"
             },
             {
               "id": "cad16ae5-3b41-489e-b803-409fbca95bca",
               "name": "Mob No",
-              "value": "=+91{{ $json[\"Mob No\"] }}",
+              "value": "=+91{{ $json[\"Whatsapp number\"] }}",
               "type": "string"
             }
           ]
@@ -364,10 +357,16 @@
           "mappingMode": "defineBelow",
           "value": {
             "Email": "={{ $('Airtable1').item.json.Email }}",
-            "Name": "={{ $('Airtable1').item.json.Name }}"
+            "Name": "={{ $('Airtable1').item.json.Name }}",
+            "Appointment_date": "={{ $('Airtable1').item.json[\"Appointment date\"] }}",
+            "Appointment_time": "={{ $('Airtable1').item.json[\"Appointment_time\"] }}",
+            "Discussion Topic": "={{ $json.output.discussion_topics }}",
+            "Summary": "={{ $json.output.summary }}",
+            "Reason for call": "={{ $json.output.reason_for_visit }}",
+            "Visit or not": "={{ $json.output.appointment_confirmation }}"
           },
           "matchingColumns": [
-            "id"
+            "Email"
           ],
           "schema": [
             {
@@ -378,7 +377,7 @@
               "display": true,
               "type": "string",
               "readOnly": true,
-              "removed": false
+              "removed": true
             },
             {
               "id": "Email",
@@ -403,8 +402,8 @@
               "removed": false
             },
             {
-              "id": "Appointment Date",
-              "displayName": "Appointment Date",
+              "id": "Appointment_date",
+              "displayName": "Appointment_date",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
@@ -414,34 +413,13 @@
               "removed": false
             },
             {
-              "id": "Appointment Type",
-              "displayName": "Appointment Type",
+              "id": "Appointment_time",
+              "displayName": "Appointment_time",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
               "display": true,
               "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Call or not",
-              "displayName": "Call or not",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Yes",
-                  "value": "Yes"
-                },
-                {
-                  "name": "No",
-                  "value": "No"
-                }
-              ],
               "readOnly": false,
               "removed": false
             },
@@ -477,6 +455,17 @@
               "type": "string",
               "readOnly": false,
               "removed": false
+            },
+            {
+              "id": "Visit or not",
+              "displayName": "Visit or not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -487,8 +476,8 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
       "position": [
-        3960,
-        600
+        4140,
+        760
       ],
       "id": "e118f649-b862-40a5-bbba-eaeb4caff428",
       "name": "Airtable2",
@@ -514,6 +503,54 @@
     },
     {
       "parameters": {
+        "content": "# 2 Hour Prior Reminder ",
+        "height": 80,
+        "width": 420,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        680,
+        340
+      ],
+      "id": "11d10b69-45e6-4f3f-a341-36e615dc0f1c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 33ecbf2b-981c-4382-bf87-512ba7407a03"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"assistantId\": \"8dd85fad-76b0-4899-bcea-73608c16b505\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"name\": \"{{ $('Airtable1').item.json.Name }}\",\n      \"appointment_date\": \"{{ $('Edit Fields').item.json.Appointment_date }}\",\n      \"appointment_time\": \"{{ $('Edit Fields').item.json.Appointment_time }}\",\n      \"location\": \"Google Meet\",\n      \"appointment_type\": \"{{ $('Edit Fields').item.json.Reason_for_visit }}\",\n      \"email\": \"{{ $('Airtable1').item.json.Email }}\"\n    }\n  },\n  \"customer\": {\n    \"number\": \"{{ $('Edit Fields').item.json['Mob No'] }}\"\n  },\n  \"phoneNumberId\": \"8ea87ee3-277a-4776-9e44-cdc99dc6ede1\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2460,
+        520
+      ],
+      "id": "564194ee-8326-41ee-8fda-0f5aa14c256a",
+      "name": "Make Appointment Call (Priya)"
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
@@ -522,13 +559,13 @@
           ]
         }
       },
-      "id": "ea7b9f1e-4d72-4aa8-84ef-437e35fa89a3",
+      "id": "c365a9e6-8b1d-4cf2-b1c6-ec316069f21e",
       "name": "Schedule Trigger1",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [
-        720,
-        1160
+        760,
+        1400
       ],
       "disabled": true
     },
@@ -544,21 +581,21 @@
         },
         "table": {
           "__rl": true,
-          "value": "tblHKzG5xbBCrMRMR",
+          "value": "tblEw51y6VS6K5ZA3",
           "mode": "list",
-          "cachedResultName": "Patient Info",
-          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+          "cachedResultName": "Patient Reminder",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblEw51y6VS6K5ZA3"
         },
-        "filterByFormula": "{Patient_reminder_call} = \"No\"",
+        "filterByFormula": "{Two_week_call} = \"No\"",
         "options": {}
       },
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
       "position": [
-        920,
-        1160
+        960,
+        1400
       ],
-      "id": "02298b28-fdfc-4ea5-aaff-8347f9719ce6",
+      "id": "3683ecd4-179b-4ad4-b33a-57efd7dfbf81",
       "name": "Airtable",
       "credentials": {
         "airtableTokenApi": {
@@ -574,10 +611,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1140,
-        1160
+        1180,
+        1400
       ],
-      "id": "c9c2570b-9bfd-4a4e-bea1-2742398ba461",
+      "id": "22c8b59c-9e5e-4fca-ac08-7e906e72e3b7",
       "name": "Loop Over Items1"
     },
     {
@@ -587,10 +624,10 @@
       "type": "n8n-nodes-base.dateTime",
       "typeVersion": 2,
       "position": [
-        1580,
-        1080
+        1620,
+        1320
       ],
-      "id": "95cef884-4400-4057-bba0-7177220c6daf",
+      "id": "f9551c63-c9c1-4018-98d4-f80e9e7fd69a",
       "name": "Date & Time1"
     },
     {
@@ -600,23 +637,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1800,
-        1080
+        1840,
+        1320
       ],
-      "id": "9772b98b-be3b-4b53-a3af-100f90609f50",
+      "id": "8c3c26f2-22b0-4ff2-b3d2-1124aed2090b",
       "name": "Code2"
     },
     {
       "parameters": {
-        "jsCode": "// Get current date and time from $input\nconst currentDate = $input.first().json.currentDate; // e.g. \"2025-06-06\"\nconst currentTime = $input.first().json.currentTime; // e.g. \"04:18\"\n\n// Get appointment info from another node (update node name if needed)\nconst appointmentDate = $node[\"Edit Fields1\"].json.Appointment_date; // e.g. \"2025-05-05\"\nconst appointmentTimeRaw = $node[\"Edit Fields1\"].json.Appointment_time; // e.g. \"16:00\"\n\n// Parse and normalize time to HH:mm:ss\nfunction parseAppointmentTime(timeStr) {\n  if (!timeStr) return null;\n  const time = timeStr.trim();\n  const parts = time.split(\":\");\n\n  if (parts.length === 2) {\n    const hh = parts[0].padStart(2, '0');\n    const mm = parts[1].padStart(2, '0');\n    return `${hh}:${mm}:00`;\n  } else if (parts.length === 3) {\n    const hh = parts[0].padStart(2, '0');\n    const mm = parts[1].padStart(2, '0');\n    const ss = parts[2].padStart(2, '0');\n    return `${hh}:${mm}:${ss}`;\n  }\n\n  return null; // Invalid time format\n}\n\nconst appointmentTimeFormatted = parseAppointmentTime(appointmentTimeRaw);\n\n// Compose ISO datetime strings\nconst currentDateTimeStr = `${currentDate}T${currentTime}:00`;\nconst appointmentDateTimeStr = `${appointmentDate}T${appointmentTimeFormatted}`;\n\n// Parse to Date objects\nconst currentDateTime = new Date(currentDateTimeStr);\nconst appointmentDateTime = new Date(appointmentDateTimeStr);\n\n// Validate dates\nif (isNaN(currentDateTime.getTime()) || isNaN(appointmentDateTime.getTime())) {\n  return [\n    {\n      json: {\n        error: \"Invalid date format detected\",\n        callPatient: false\n      }\n    }\n  ];\n}\n\n// Calculate absolute difference in days\nconst diffMs = Math.abs(appointmentDateTime - currentDateTime);\nconst diffDays = diffMs / (1000 * 60 * 60 * 24);\n\n// Return true if difference is more than 21 days (past or future)\nconst callPatient = diffDays > 21;\n\nreturn [\n  {\n    json: {\n      currentDateTime: currentDateTime.toISOString(),\n      appointmentDateTime: appointmentDateTime.toISOString(),\n      diffDays: Math.round(diffDays * 100) / 100,\n      callPatient: callPatient\n    }\n  }\n];\n"
+        "jsCode": "// Get current date and time from $input\nconst currentDate = $input.first().json.currentDate; // e.g. \"2025-06-06\"\nconst currentTime = $input.first().json.currentTime; // e.g. \"04:18\"\n\n// Get appointment info from another node (update node name if needed)\nconst appointmentDate = $node[\"Edit Fields1\"].json.Appointment_date; // e.g. \"2025-05-05\"\nconst appointmentTimeRaw = $node[\"Edit Fields1\"].json.Appointment_time; // e.g. \"16:00\"\n\n// Parse and normalize time to HH:mm:ss\nfunction parseAppointmentTime(timeStr) {\n  if (!timeStr) return null;\n  const time = timeStr.trim();\n  const parts = time.split(\":\");\n\n  if (parts.length === 2) {\n    const hh = parts[0].padStart(2, '0');\n    const mm = parts[1].padStart(2, '0');\n    return `${hh}:${mm}:00`;\n  } else if (parts.length === 3) {\n    const hh = parts[0].padStart(2, '0');\n    const mm = parts[1].padStart(2, '0');\n    const ss = parts[2].padStart(2, '0');\n    return `${hh}:${mm}:${ss}`;\n  }\n\n  return null; // Invalid time format\n}\n\nconst appointmentTimeFormatted = parseAppointmentTime(appointmentTimeRaw);\n\n// Compose ISO datetime strings\nconst currentDateTimeStr = `${currentDate}T${currentTime}:00`;\nconst appointmentDateTimeStr = `${appointmentDate}T${appointmentTimeFormatted}`;\n\n// Parse to Date objects\nconst currentDateTime = new Date(currentDateTimeStr);\nconst appointmentDateTime = new Date(appointmentDateTimeStr);\n\n// Validate dates\nif (isNaN(currentDateTime.getTime()) || isNaN(appointmentDateTime.getTime())) {\n  return [\n    {\n      json: {\n        error: \"Invalid date format detected\",\n        callPatient: false\n      }\n    }\n  ];\n}\n\n// Calculate absolute difference in days\nconst diffMs = Math.abs(appointmentDateTime - currentDateTime);\nconst diffDays = diffMs / (1000 * 60 * 60 * 24);\n\n// Return true if difference is more than 14 days (past or future)\nconst callPatient = diffDays > 14;\n\nreturn [\n  {\n    json: {\n      currentDateTime: currentDateTime.toISOString(),\n      appointmentDateTime: appointmentDateTime.toISOString(),\n      diffDays: Math.round(diffDays * 100) / 100,\n      callPatient: callPatient\n    }\n  }\n];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2020,
-        1080
+        2060,
+        1320
       ],
-      "id": "dc20e978-4465-4f7e-a5fb-d76841feb965",
+      "id": "253bd98a-183c-42e9-ba6c-ddbe93fc0df9",
       "name": "Code3"
     },
     {
@@ -666,10 +703,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1360,
-        1080
+        1400,
+        1320
       ],
-      "id": "7335830d-9181-45fc-b8d2-0283c1a7e274",
+      "id": "f9aeb0f5-2658-44ec-a0c5-d3d7bc0d649e",
       "name": "Edit Fields1"
     },
     {
@@ -700,10 +737,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2240,
-        1160
+        2280,
+        1400
       ],
-      "id": "c12904d8-a9de-46cd-8231-52fd90c52579",
+      "id": "f42de9a3-6416-4b1f-9c19-6a9ba456c6cd",
       "name": "If1"
     },
     {
@@ -713,10 +750,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2680,
-        1160
+        2720,
+        1400
       ],
-      "id": "db26ae29-6f05-4a7c-b0a2-88ffb592c95c",
+      "id": "89008496-567c-450f-9a91-85e46bac03d0",
       "name": "Wait for Call to Complete1",
       "webhookId": "916d934d-c834-4391-a943-2c64a9ae83fd"
     },
@@ -737,10 +774,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2900,
-        1160
+        2940,
+        1400
       ],
-      "id": "d2826cab-d3c6-4846-ba35-e4ee3386b997",
+      "id": "560952c9-3f64-4b6a-bb1a-7baf141c71aa",
       "name": "Get Call Transcript1"
     },
     {
@@ -770,10 +807,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        3120,
-        1080
+        3160,
+        1320
       ],
-      "id": "e6bd6a98-800e-4783-ba00-1d0466915c1e",
+      "id": "51b4afb5-d074-4b33-894d-593ed009d5fc",
       "name": "Check Call Status1"
     },
     {
@@ -783,10 +820,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3340,
-        1040
+        3380,
+        1280
       ],
-      "id": "3d4e5a8c-af9a-46ca-86ab-5e3940368a90",
+      "id": "8827c3e5-9604-4f0d-aa09-0b2f69c54392",
       "name": "Format Transcript1"
     },
     {
@@ -796,10 +833,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        3340,
-        1260
+        3380,
+        1500
       ],
-      "id": "6f15270c-bdf4-4aa1-90fa-769b4e815f76",
+      "id": "a221bbcf-d23e-4c68-b7c6-eb6406f13ed9",
       "name": "Wait Before Retry1",
       "webhookId": "2b344315-8e59-4d84-accc-544645470997"
     },
@@ -809,16 +846,16 @@
         "text": "=Transcript: {{ $json.transcript }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=You are an AI summarizer. Your task is to process the transcript of a pre-appointment conversation between an AI Assistant and a patient. Summarize only the essential information in a structured JSON format.\n\nWhole Conversation Transcript:\n{{ $json.transcript }}\n\nReturn the output in the following strict format:\n\n{\n  \"appointment_confirmation\": \"Yes\" | \"No\",\n  \"discussion_topics\": [\"<Topic 1>\", \"<Topic 2>\", \"...\"],\n  \"additional_notes\": \"<Any other relevant information or 'None'>\",\n  \"reason_for_visit\": \"<Any other relevant information or 'None'>\",\n  \"summary\": \"call_conversation_summarisation\"\n}\n\n\nGuidelines:\nBe concise, accurate, and professional.\n\nFocus only on medically or logistically relevant details.\n\nIgnore small talk or casual conversation.\n\nDo not make assumptions or provide medical advice.\n\nIf a field is not mentioned in the conversation, use \"None\" for text fields or an empty array [] for lists."
+          "systemMessage": "=You are an AI summarizer. Your task is to analyze the transcript of a follow-up call between an AI Assistant and a patient (conducted two weeks after their last checkup).\n\nPlease extract only medically or logistically relevant information and return the summary in the following JSON format:\n\n{\n  \"email\": \"<Patient Email or 'None'>\",\n  \"name\": \"<Patient Name or 'None'>\",\n  \"call_summary\": \"Brief summary of what was discussed, in 1–2 lines.\",\n  \"health_review\": \"Summary of any health trends, stability, or improvements.\",\n  \"areas_of_concern\": \"Any symptoms, issues, or health risks mentioned during the call. Use 'None' if not mentioned.\"\n}\n\nGuidelines:\n- Be concise, accurate, and professional.\n- Focus only on medically relevant or follow-up-worthy details.\n- Ignore greetings, small talk, or general chit-chat.\n- Do NOT provide diagnosis or advice — just summarize what's stated.\n- If any field is missing from the transcript, use `\"None\"` as its value.\n- The transcript is from a post-checkup follow-up call, so look for updates on health progress, trends, concerns, or follow-up needs.\n\nWhole Conversation Transcript:\n{{ $json.transcript }}\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.9,
       "position": [
-        3560,
-        1040
+        3600,
+        1280
       ],
-      "id": "51d25de7-f3cb-4abc-95cd-57e3f43e1aa3",
+      "id": "5d11e4f6-3789-49ed-a33b-ab14e9fadce2",
       "name": "AI Agent1"
     },
     {
@@ -829,10 +866,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        3600,
-        1260
+        3640,
+        1500
       ],
-      "id": "43307d60-1b20-41be-b66b-f08d4476d026",
+      "id": "e3a8bafc-159e-424c-ba5d-e0bcc91c6c84",
       "name": "Google Gemini Chat Model1",
       "credentials": {
         "googlePalmApi": {
@@ -843,15 +880,15 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"appointment_confirmation\": \"Yes\",\n  \"discussion_topics\": [\"Dental\", \"Tooth Pain\"],\n  \"additional_notes\": \"None\",\n  \"reason_for_visit\": \"Tooth pain and general dental checkup\",\n  \"summary\": \"Call was to confirm the patient's attendance for a dental checkup and address their concern about tooth pain.\"\n}\n"
+        "jsonSchemaExample": "{\n  \"email\": \"None\",\n  \"name\": \"None\",\n  \"call_summary\": \"Call was to confirm the patient's attendance for a dental checkup and address their concern about tooth pain.\",\n  \"health_review\": \"None\",\n  \"areas_of_concern\": \"Tooth pain\"\n}\n"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        3720,
-        1260
+        3760,
+        1500
       ],
-      "id": "9ff8c3c0-9580-4754-a418-3b059fe9d833",
+      "id": "5160609d-68bd-41de-9452-18a204b75584",
       "name": "Structured Output Parser1"
     },
     {
@@ -866,25 +903,22 @@
         },
         "table": {
           "__rl": true,
-          "value": "tblCQKKBuWVDbFd7Q",
+          "value": "tblOB8kYDiesHghZv",
           "mode": "list",
-          "cachedResultName": "Patient Reminder",
-          "cachedResultUrl": "https://airtable.com/app0o7BBRqo8QD0SI/tblCQKKBuWVDbFd7Q"
+          "cachedResultName": "2 week report",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblOB8kYDiesHghZv"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Will_visit": "={{ $json.output.appointment_confirmation }}",
-            "Discussion_topics": "={{ $json.output.discussion_topics }}.",
             "Email": "={{ $('Airtable').item.json.Email }}",
             "Name": "={{ $('Airtable').item.json.Name }}",
-            "Appointment_date": "={{ $('Airtable').item.json.Appointment_date }}",
-            "Appointment_time": "={{ $('Airtable').item.json.Appointment_time }}",
-            "summary": "={{ $json.output.summary }}",
-            "Reason_for_visit": "={{ $json.output.reason_for_visit }}"
+            "Call_summary": "={{ $json.output.call_summary }}",
+            "Health_review": "={{ $json.output.health_review }}",
+            "Areas_of_concern": "={{ $json.output.areas_of_concern }}"
           },
           "matchingColumns": [
-            "id"
+            "Email"
           ],
           "schema": [
             {
@@ -895,7 +929,7 @@
               "display": true,
               "type": "string",
               "readOnly": true,
-              "removed": false
+              "removed": true
             },
             {
               "id": "Email",
@@ -920,8 +954,8 @@
               "removed": false
             },
             {
-              "id": "Appointment_date",
-              "displayName": "Appointment_date",
+              "id": "Call_summary",
+              "displayName": "Call_summary",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
@@ -931,8 +965,8 @@
               "removed": false
             },
             {
-              "id": "Appointment_time",
-              "displayName": "Appointment_time",
+              "id": "Health_review",
+              "displayName": "Health_review",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
@@ -942,51 +976,8 @@
               "removed": false
             },
             {
-              "id": "Reason_for_visit",
-              "displayName": "Reason_for_visit",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Will_visit",
-              "displayName": "Will_visit",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Yes",
-                  "value": "Yes"
-                },
-                {
-                  "name": "No",
-                  "value": "No"
-                }
-              ],
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Discussion_topics",
-              "displayName": "Discussion_topics",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "summary",
-              "displayName": "summary",
+              "id": "Areas_of_concern",
+              "displayName": "Areas_of_concern",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
@@ -1004,10 +995,10 @@
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
       "position": [
-        3940,
-        1240
+        4120,
+        1600
       ],
-      "id": "09457ce9-2605-48b0-8637-b61382e34723",
+      "id": "11290ed7-17c0-4de4-857a-21ba8f038b27",
       "name": "Airtable3",
       "credentials": {
         "airtableTokenApi": {
@@ -1023,27 +1014,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1360,
-        880
+        1400,
+        1120
       ],
-      "id": "c76e32db-2b2a-40dd-964d-c9304b3786b8",
+      "id": "f9e39ed3-5e6b-4932-a188-616b3407a80d",
       "name": "Edit Fields3"
-    },
-    {
-      "parameters": {
-        "content": "# 2 Hour Prior Reminder ",
-        "height": 80,
-        "width": 420,
-        "color": 4
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        680,
-        340
-      ],
-      "id": "11d10b69-45e6-4f3f-a341-36e615dc0f1c",
-      "name": "Sticky Note"
     },
     {
       "parameters": {
@@ -1071,43 +1046,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2460,
-        1160
+        2500,
+        1400
       ],
-      "id": "9fa64374-b739-493f-a31e-923c89008411",
+      "id": "3b8dab2f-68cc-489f-ad4b-3364b41603e8",
       "name": "Make Appointment Call (Anita)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.vapi.ai/call",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer 33ecbf2b-981c-4382-bf87-512ba7407a03"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={\n  \"assistantId\": \"8dd85fad-76b0-4899-bcea-73608c16b505\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"name\": \"{{ $('Airtable1').item.json.Name }}\",\n      \"appointment_date\": \"{{ $('Edit Fields').item.json.Appointment_date }}\",\n      \"appointment_time\": \"{{ $('Edit Fields').item.json.Appointment_time }}\",\n      \"location\": \"Google Meet\",\n      \"appointment_type\": \"{{ $('Edit Fields').item.json.Reason_for_visit }}\",\n      \"email\": \"{{ $('Airtable1').item.json.Email }}\"\n    }\n  },\n  \"customer\": {\n    \"number\": \"{{ $('Edit Fields').item.json['Mob No'] }}\"\n  },\n  \"phoneNumberId\": \"8ea87ee3-277a-4776-9e44-cdc99dc6ede1\"\n}\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2460,
-        520
-      ],
-      "id": "564194ee-8326-41ee-8fda-0f5aa14c256a",
-      "name": "Make Appointment Call (Priya)"
     },
     {
       "parameters": {
@@ -1119,14 +1062,400 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        680,
-        1040
+        720,
+        1280
       ],
-      "id": "5d7c7183-ae7f-44ed-88ec-d77c489a6c93",
+      "id": "53870d86-6c8a-4506-b48e-24d8329041cb",
       "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHKzG5xbBCrMRMR",
+          "mode": "list",
+          "cachedResultName": "Patient Info",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblHKzG5xbBCrMRMR"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Patient reminder call": "Yes",
+            "Email": "={{ $('Airtable1').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Age",
+              "displayName": "Age",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Whatsapp number",
+              "displayName": "Whatsapp number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Appointment date",
+              "displayName": "Appointment date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Appointment time",
+              "displayName": "Appointment time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reason for call",
+              "displayName": "Reason for call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Call Summary",
+              "displayName": "Call Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mail Send Or Not",
+              "displayName": "Mail Send Or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Whatsapp Send or Not",
+              "displayName": "Whatsapp Send or Not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Patient reminder call",
+              "displayName": "Patient reminder call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Calendar event id",
+              "displayName": "Calendar event id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        4360,
+        760
+      ],
+      "id": "77e73b7d-5a8e-4619-a513-ae631c9a8ffb",
+      "name": "Airtable4",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app7OPXD06PT9FB8p",
+          "mode": "list",
+          "cachedResultName": "vapi-voice-agents",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblEw51y6VS6K5ZA3",
+          "mode": "list",
+          "cachedResultName": "Patient Reminder",
+          "cachedResultUrl": "https://airtable.com/app7OPXD06PT9FB8p/tblEw51y6VS6K5ZA3"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Two_week_call": "Yes",
+            "Email": "={{ $('Airtable3').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Appointment_date",
+              "displayName": "Appointment_date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Appointment_time",
+              "displayName": "Appointment_time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Discussion Topic",
+              "displayName": "Discussion Topic",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reason for call",
+              "displayName": "Reason for call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Visit or not",
+              "displayName": "Visit or not",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Two_week_call",
+              "displayName": "Two_week_call",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        4340,
+        1600
+      ],
+      "id": "1eba839d-f701-47d0-b7bc-fda00ed2ce37",
+      "name": "Airtable5",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "7Y0w630yoXHgFYLG",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
     }
   ],
-  "pinData": {},
   "connections": {
     "Schedule Trigger": {
       "main": [
@@ -1329,7 +1658,18 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Airtable4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Appointment Call (Priya)": {
+      "main": [
+        [
+          {
+            "node": "Wait for Call to Complete",
             "type": "main",
             "index": 0
           }
@@ -1537,7 +1877,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items1",
+            "node": "Airtable5",
             "type": "main",
             "index": 0
           }
@@ -1555,11 +1895,22 @@
         ]
       ]
     },
-    "Make Appointment Call (Priya)": {
+    "Airtable4": {
       "main": [
         [
           {
-            "node": "Wait for Call to Complete",
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
             "type": "main",
             "index": 0
           }
@@ -1567,15 +1918,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "efc1fa9d-1da0-400c-a604-eab7dc114e4c",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a0a8ed84260f8d68688e141a2027026f354c377c7fd228996ae3205b00984ade"
-  },
-  "id": "E4KKKXeAjQnEjfLg",
-  "tags": []
+  }
 }
