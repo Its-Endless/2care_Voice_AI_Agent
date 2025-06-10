@@ -51,7 +51,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Asks if they are still attending, gathers a brief health update, and offers to **reschedule** if needed.
 - Handles appointment confirmation, rescheduling, or cancellation — based on live conversation.
 
-**Prompt**: [`Priya Reminder`](Agent%20Prompts/Priya%20Reminder.txt)  
+**Prompt**: [`Priya Reminder`](Agent%20Prompts/Priya%20%20Reminder.txt)  
 **Workflow**: [`Priya Workflow`](Screenshots/Priya%20Workflow.png)
 
 ---
@@ -63,7 +63,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Reviews health trends, flags concerns, celebrates progress, and checks medication adherence.
 - Introduces plan upgrades if they offer medical benefit (e.g., 24/7 support, better vitals tracking, family coordination).
 
-**Prompt**: [`Anita 3-Week Report`](Agent%20Prompts/Anita%203%20week%20report.txt)  
+**Prompt**: [`Anita 3-Week Report`](Agent%20Prompts/Anita%203_Week_Report.txt)  
 **Workflow**: [`Anita Workflow`](Screenshots/Anita%20Workflow.png)
 
 ---
@@ -87,7 +87,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
   - Rescheduling requests
   - Pre-visit instructions
   - Last-minute cancellations
-- **Prompt**: [View Priya's Conversation Flow](Agent%20Prompts/Priya%20Reminder.txt)
+- **Prompt**: [View Priya's Conversation Flow](Agent%20Prompts/Priya%20%20Reminder.txt)
 - **Active Hours**: Based on appointment schedule
 
 ### 3. Anita - Follow-up Care Specialist
@@ -97,7 +97,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
   - Progress monitoring
   - Treatment adherence checks
   - Care plan upgrades
-- **Prompt**: [View Anita's Conversation Flow](Agent%20Prompts/Anita%203%20Week%20Report.txt)
+- **Prompt**: [View Anita's Conversation Flow](Agent%20Prompts/Anita%203_Week_Report.txt)
 - **Active Hours**: Business hours only
 
 ## 🔄 Workflow Automation
@@ -111,6 +111,11 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 ![Priya's Reminder Flow](Screenshots/Priya%20Workflow.png)
 - **Workflow File**: [Patient_Reminder____2care_ai.json](n8n%20Workflows/Patient_Reminder____2care_ai.json)
 - **Purpose**: Automates appointment reminders and handles rescheduling requests
+
+### 3. Follow-up Care System
+![Anita's Check-in Flow](Screenshots/Anita%20Workflow.png)
+- **Workflow File**: [Two_Week_Checkup____2care_ai.json](n8n%20Workflows/Patient_Reminder____2care_ai.json)
+- **Purpose**: Manages post-appointment follow-ups, tracks patient progress, and identifies upgrade opportunities
 
 ## 🛠️ Technical Implementation
 
