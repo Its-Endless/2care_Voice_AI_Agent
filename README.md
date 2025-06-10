@@ -1,6 +1,6 @@
 # 🧠 2Care Voice AI Agent (Vapi + n8n)
 
-A fully automated, human-like Voice Agent for 2Care.ai — built using [Vapi](https://www.vapi.ai/) and [n8n](https://n8n.io/). This agent (Neha) handles medical appointment scheduling, patient onboarding, rescheduling, cancellations, and customer support — entirely through natural-sounding voice conversations.
+A fully automated, human-like Voice Agent for 2Care.ai — built using [Vapi](https://www.vapi.ai/) and [n8n](https://n8n.io/). These agent (Neha, Priya and Anita) handles medical appointment scheduling, patient onboarding, rescheduling, cancellations, customer support, appointment remainder and biweekly checkup — entirely through natural-sounding voice conversations.
 
 ## 🛠️ Features
 
