@@ -7,7 +7,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 | Agent | Phone Number | Primary Role |
 |-------|-------------|--------------|
 | **Neha** | (9045) | Patient Onboarding & Scheduling |
-| **Priya** | (1234) | Appointment Reminders & Rescheduling |
+| **Priya** | (+12393972143) | Appointment Reminders & Rescheduling |
 | **Anita** | (9876) | Post-Visit Care & Health Check-ins |
 
 ## 🛠️ Tech Stack
@@ -39,8 +39,8 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - **Appointment Booking** – Schedules appointments, confirming date, time, patient info, and medical need.
 - **Customer Support** – Answers general queries, redirects to support, or logs help requests.
 
-**Prompt**: [`Neha Intro`](Agent Prompts/Neha%20Intro.txt)  
-**Workflow**: ![Neha Workflow](Screenshots/Neha Workflow.png)
+**Prompt**: [`Neha Intro`](Agent%20Prompts/Neha%20Intro.txt)  
+**Workflow**: [`Neha Workflow`](Screenshots/Neha%20Workflow.png)
 
 ---
 
@@ -51,8 +51,8 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Asks if they are still attending, gathers a brief health update, and offers to **reschedule** if needed.
 - Handles appointment confirmation, rescheduling, or cancellation — based on live conversation.
 
-**Prompt**: [`Priya Reminder`](Agent Prompts/Priya%20Reminder.txt)  
-**Workflow**: ![Priya Workflow](Screenshots/Priya Workflow.png)
+**Prompt**: [`Priya Reminder`](Agent%20Prompts/Priya%20Reminder.txt)  
+**Workflow**: [`Priya Workflow`](Screenshots/Priya%20Workflow.png)
 
 ---
 
@@ -63,8 +63,8 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Reviews health trends, flags concerns, celebrates progress, and checks medication adherence.
 - Introduces plan upgrades if they offer medical benefit (e.g., 24/7 support, better vitals tracking, family coordination).
 
-**Prompt**: [`Anita 3-Week Report`](Agent Prompts/Anita%203%20week%20report.txt)  
-**Workflow**: ![Anita Workflow](Screenshots/Anita Workflow.png)
+**Prompt**: [`Anita 3-Week Report`](Agent%20Prompts/Anita%203%20week%20report.txt)  
+**Workflow**: [`Anita Workflow`](Screenshots/Anita%20Workflow.png)
 
 ---
 
