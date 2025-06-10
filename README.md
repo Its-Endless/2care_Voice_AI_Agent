@@ -17,6 +17,14 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 [![Twilio](https://img.shields.io/badge/Twilio-Communications-red)](https://www.twilio.com)
 [![Airtable](https://img.shields.io/badge/Airtable-Database-green)](https://www.airtable.com)
 
+
+---
+
+## 📊 System Architecture
+![System Flowchart](Flowchart.png)
+
+A brief Flowchart from initial contact to follow-up care*
+
 ---
 
 ## 🚀 Overview
