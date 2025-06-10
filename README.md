@@ -1,2 +1,61 @@
-# 2care_Voice_AI_Agent
-This project features a dynamic AI Voice Agent built using Vapi and n8n, designed for 2Care.ai’s virtual clinic.
+# 🧠 2Care Voice AI Agent (Vapi + n8n)
+
+A fully automated, human-like Voice Agent for 2Care.ai — built using [Vapi](https://www.vapi.ai/) and [n8n](https://n8n.io/). This agent (Neha) handles medical appointment scheduling, patient onboarding, rescheduling, cancellations, and customer support — entirely through natural-sounding voice conversations.
+
+## 🛠️ Features
+
+- 🎙️ **Voice AI** powered by Vapi (LLM + TTS + STT)
+- ⚙️ **n8n Automation** for scheduling logic, webhook handling, and database integration
+- 🤖 **Context-aware Conversations** for new and returning patients
+- 📆 **Appointment System Integration** with real-time availability checks and booking
+- ❓ **FAQ Triage** using a dynamic knowledge base
+- 📞 Handles full workflows: onboarding → booking → rescheduling → cancellation → support
+
+## 📦 Tech Stack
+
+- **Vapi.ai** – Voice AI orchestration
+- **n8n.io** – Workflow automation + webhook routing
+- **Supabase / PostgreSQL** – (Optional) Backend for patient and slot data
+- **OpenAI / Claude** – Language model powering Neha's brain (via Vapi)
+- **Google Meet** – All consultations are scheduled as virtual calls
+
+## 🚀 How It Works
+
+1. User calls the AI agent.
+2. Vapi processes speech and sends intents to n8n.
+3. n8n routes the data (e.g., booking info) and handles webhook/API calls.
+4. Confirmation and follow-ups are sent via WhatsApp/email.
+
+## 🧰 Folder Structure
+/n8n-workflows → All n8n flows used for appointment logic
+/vapi-prompts → Voice agent prompt (Neha)
+/docs → Architecture diagrams, notes
+README.md
+
+
+## 🔄 Flows Included
+
+- Initial Patient Discovery
+- Family Member Booking
+- Appointment Scheduling (via `Get-Slot` + `Book_Slot`)
+- Rescheduling (`Update_Slot`)
+- Cancellations (`Cancel_Slot`)
+- FAQ support and fallback handling
+
+## 🧪 Demo & Setup
+
+> 📺 [Coming Soon: YouTube demo walkthrough]
+
+To run this:
+- Setup your agent on [Vapi.ai](https://vapi.ai/)
+- Import n8n workflows
+- Configure webhooks and environment variables
+- Connect to a scheduling system (e.g., Supabase, Notion, Airtable)
+
+## 🤝 Credits
+
+Built by [Prakarsh Gupta](https://www.linkedin.com/in/prakarsh-gupta-ai) at **Small AI** – AI automation agency for health and service businesses.
+
+---
+
+> For help integrating this in your clinic or product, reach out via [ai.smallgrp.com](https://ai.smallgrp.com)
