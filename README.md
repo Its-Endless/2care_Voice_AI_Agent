@@ -126,23 +126,54 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 
 ---
 
-## 📦 Folder Structure
-
-/Agent Prompts → Vapi prompt files for each agent
-/images → Workflow screenshots for each agent
-/n8n-workflows → Flow exports (optional)
-README.md
-
-
----
-
 ## ✅ Setup Instructions
 
-1. Clone the repository
-2. Set up Vapi agents and upload corresponding prompts
-3. Import and configure n8n workflows
-4. Connect to Supabase (or any DB of choice)
-5. Integrate webhook URLs between Vapi <-> n8n
-6. Monitor conversations and follow-up actions via dashboards
+### 1. Repository Setup
+- Clone the repository: `git clone https://github.com/yourusername/2care_Voice_AI_Agent.git`
+- Navigate to project directory: `cd 2care_Voice_AI_Agent`
+- Check all required files and folders are present (workflows, prompts, screenshots)
 
+### 2. n8n Configuration
+- Import the following workflow files to your n8n instance:
+  - `Call_Scheduling____2care_ai.json`
+  - `Patient_Reminder____2care_ai.json`
+- Setup required credentials:
+  - Google Calendar API credentials
+  - Gmail credentials
+  - Airtable API key and base configuration
+  - Twilio account SID and auth token
+
+### 3. Vapi.ai Setup
+- Create three agents in Vapi dashboard (Neha, Priya, Anita)
+- Upload conversation prompts from `Agent Prompts` folder
+- Configure agent functions:
+  - Get-Slots() - Calendar availability check
+  - Book_Slot() - Slot reservation
+  - Cancel_Slot() - Appointment cancellation
+- Test each agent's conversation flow
+
+### 4. Integration Configuration
+- Update webhook URLs in n8n workflows with your Vapi endpoints
+- Configure Twilio phone numbers for each agent
+- Setup Airtable base with required tables:
+  - Patients
+  - Appointments
+  - Health Records
+  - Follow-ups
+- Test end-to-end workflow for each agent
+
+### 5. Monitoring & Maintenance
+- Setup monitoring dashboard for:
+  - Call success rates
+  - Conversation completion metrics
+  - Appointment statistics
+- Configure error notifications
+- Regular backup of workflow configurations
+- Monitor API usage and limits
+
+### 6. Testing & Validation
+- Perform test calls with each agent
+- Verify data flow between systems
+- Check appointment booking and reminder functionality
+- Validate health check-in process
 ---
