@@ -15,8 +15,7 @@ A fully automated, human-like Voice Agent for 2Care.ai — built using [Vapi](ht
 
 - **Vapi.ai** – Voice AI orchestration
 - **n8n.io** – Workflow automation + webhook routing
-- **Supabase / PostgreSQL** – (Optional) Backend for patient and slot data
-- **OpenAI / Claude** – Language model powering Neha's brain (via Vapi)
+- **OpenAI / Claude** – Language model powering Assistant's brain (via Vapi)
 - **Google Meet** – All consultations are scheduled as virtual calls
 
 ## 🚀 How It Works
@@ -38,24 +37,16 @@ README.md
 - Initial Patient Discovery
 - Family Member Booking
 - Appointment Scheduling (via `Get-Slot` + `Book_Slot`)
-- Rescheduling (`Update_Slot`)
+- Rescheduling 
 - Cancellations (`Cancel_Slot`)
 - FAQ support and fallback handling
 
 ## 🧪 Demo & Setup
 
-> 📺 [Coming Soon: YouTube demo walkthrough]
 
 To run this:
 - Setup your agent on [Vapi.ai](https://vapi.ai/)
 - Import n8n workflows
 - Configure webhooks and environment variables
-- Connect to a scheduling system (e.g., Supabase, Notion, Airtable)
+- Connect to a scheduling system 
 
-## 🤝 Credits
-
-Built by [Prakarsh Gupta](https://www.linkedin.com/in/prakarsh-gupta-ai) at **Small AI** – AI automation agency for health and service businesses.
-
----
-
-> For help integrating this in your clinic or product, reach out via [ai.smallgrp.com](https://ai.smallgrp.com)
