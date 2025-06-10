@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "age": {
+      "description": "Collect the patient's age from the conversation when it is mentioned explicitly by the user.",
+      "type": "string"
+    },
+    "date": {
+      "description": "Book the appointment on the specific date provided by the client during the conversation.",
+      "type": "string"
+    },
+    "name": {
+      "description": "Capture the patient's name only when it is directly provided by the user during the conversation. Do not extract the name from the email or any indirect source.",
+      "type": "string"
+    },
+    "email": {
+      "description": "Collect the patient's email address as provided during the conversation. This may be used for sending appointment confirmations or notifications.",
+      "type": "string"
+    },
+    "end_time": {
+      "description": "This should always be calculated as 30 minutes after the start_time to represent the end of the appointment slot.",
+      "type": "string"
+    },
+    "start_time": {
+      "description": "Book the appointment at the time specified by the client. This is the beginning of the appointment slot.",
+      "type": "string"
+    },
+    "phone_number": {
+      "description": "Collect the patient's phone number as stated during the conversation. This may be used for appointment reminders or contact purposes.",
+      "type": "string"
+    },
+    "Reason_for_visit": {
+      "description": "Record the reason the patient provides for booking the appointment, such as symptoms, consultation type, or follow-up needs.",
+      "type": "string"
+    },
+    "past_medical_records": {
+      "description": "If the user mentions any relevant ongoing health conditions, current medications, or significant medical history during the conversation, capture that information here. Or if no past medical condition then return \"no past record\"",
+      "type": "string"
+    }
+  },
+  "required": []
+}

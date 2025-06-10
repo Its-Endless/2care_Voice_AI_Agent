@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "age": {
+      "description": "Used to gather the user/patient's age when mentioned during the conversation. This helps in identifying or verifying the individual.",
+      "type": "string"
+    },
+    "date": {
+      "description": "Collects the date (e.g., 2025-05-16) mentioned by the user/patient for cancelling the scheduled appointment.",
+      "type": "string"
+    },
+    "name": {
+      "description": "Collects the user/patient's full name as stated during the conversation. This is used to identify the correct appointment for cancellation.",
+      "type": "string"
+    },
+    "email": {
+      "description": "Collects the user/patient's email address provided during the conversation, primarily for communication or verification.",
+      "type": "string"
+    },
+    "end_time": {
+      "description": "Automatically calculated as 30 minutes after the provided start_time. This is sent to the webhook to define the appointment's end.",
+      "type": "string"
+    },
+    "start_time": {
+      "description": "Collects the user/patient's appointment start time from the conversation. This helps locate the exact event to cancel.",
+      "type": "string"
+    },
+    "cancel_note": {
+      "description": "Captures the reason given by the user/patient for cancelling the appointment, if shared during the conversation.",
+      "type": "string"
+    },
+    "phone_number": {
+      "description": "Collects the user/patient's WhatsApp number as stated during the conversation for contact or confirmation purposes.",
+      "type": "string"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "Date": {
+      "description": "The date for which the client wants to check appointment availability. Format should typically be YYYY-MM-DD.",
+      "type": "string"
+    },
+    "end_time": {
+      "description": "The end time of the appointment, which is automatically calculated as 30 minutes after the start_time. Used to verify the full time slot is available.",
+      "type": "string"
+    },
+    "start_time": {
+      "description": "The specific time the client would like the appointment to begin. This is the time to check for availability. Format should typically be HH:MM (24-hour format).",
+      "type": "string"
+    }
+  },
+  "required": []
+}
