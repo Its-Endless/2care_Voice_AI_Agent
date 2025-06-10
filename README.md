@@ -40,7 +40,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - **Customer Support** – Answers general queries, redirects to support, or logs help requests.
 
 **Prompt**: [`Neha Intro`](Agent Prompts/Neha%20Intro.txt)  
-**Workflow**: ![Neha Workflow](images/neha-workflow.png)
+**Workflow**: ![Neha Workflow](Screenshots/neha-workflow.png)
 
 ---
 
@@ -52,7 +52,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Handles appointment confirmation, rescheduling, or cancellation — based on live conversation.
 
 **Prompt**: [`Priya Reminder`](Agent Prompts/Priya%20Reminder.txt)  
-**Workflow**: ![Priya Workflow](images/priya-workflow.png)
+**Workflow**: ![Priya Workflow](Screenshots/priya-workflow.png)
 
 ---
 
@@ -64,7 +64,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 - Introduces plan upgrades if they offer medical benefit (e.g., 24/7 support, better vitals tracking, family coordination).
 
 **Prompt**: [`Anita 3-Week Report`](Agent Prompts/Anita%203%20week%20report.txt)  
-**Workflow**: ![Anita Workflow](images/anita-workflow.png)
+**Workflow**: ![Anita Workflow](Screenshots/anita-workflow.png)
 
 ---
 
