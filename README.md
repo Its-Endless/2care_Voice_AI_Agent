@@ -2,6 +2,14 @@
 
 A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. Our system manages the complete patient journey from initial contact to follow-up care through natural voice conversations, making healthcare more accessible and efficient.
 
+## 📝 Start Here: Patient Intake Form
+
+The patient journey begins with this **Tally.so form** where patients provide their initial details to kick off the workflow:
+
+[Complete the Intake Form](https://tally.so/r/3q7NJO)
+
+![Tally.so Intake Form](Screenshots/tallyform.png)
+
 ## 🎯 Our Agents
 
 | Agent | Phone Number | Primary Role |
@@ -16,7 +24,7 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 [![n8n](https://img.shields.io/badge/n8n-Workflow%20Automation-orange)](https://n8n.io)
 [![Twilio](https://img.shields.io/badge/Twilio-Communications-red)](https://www.twilio.com)
 [![Airtable](https://img.shields.io/badge/Airtable-Database-green)](https://www.airtable.com)
-
+[![Tally.so](https://img.shields.io/badge/Tally.so-Form%20Builder-brightgreen)](https://tally.so)
 
 ---
 
@@ -131,6 +139,7 @@ A brief Flowchart from initial contact to follow-up care.
 - **n8n**: Orchestrates workflows and integrates various services
 - **Twilio**: Handles voice calls and SMS communications
 - **Airtable**: Stores patient data, appointment schedules, and interaction logs
+- **Tally.so**: Collects initial patient intake data via easy-to-use forms
 
 ---
 
@@ -184,4 +193,3 @@ A brief Flowchart from initial contact to follow-up care.
 - Verify data flow between systems
 - Check appointment booking and reminder functionality
 - Validate health check-in process
----
