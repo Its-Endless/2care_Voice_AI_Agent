@@ -6,9 +6,9 @@ A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. O
 
 | Agent | Phone Number | Primary Role |
 |-------|-------------|--------------|
-| **Neha** | (9045) | Patient Onboarding & Scheduling |
-| **Priya** | (+12393972143) | Appointment Reminders & Rescheduling |
-| **Anita** | (9876) | Post-Visit Care & Health Check-ins |
+| **Neha** | (+1 (239) 397 2143) | Patient Onboarding & Scheduling |
+| **Priya** | (-) | Appointment Reminders & Rescheduling |
+| **Anita** | (-) | Post-Visit Care & Health Check-ins |
 
 ## 🛠️ Tech Stack
 
