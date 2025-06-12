@@ -2,13 +2,29 @@
 
 A fully automated, human-like **Medical Voice Assistant Suite** powered by AI. Our system manages the complete patient journey from initial contact to follow-up care through natural voice conversations, making healthcare more accessible and efficient.
 
-## 📝 Start Here: Patient Intake Form
+## 📝 Start Here: Patient Intake Forms
 
-The patient journey begins with this **Tally.so form** where patients provide their initial details to kick off the workflow:
+Begin the patient journey with the appropriate **Tally.so intake form** depending on the stage of care:
 
-[Complete the Intake Form](https://tally.so/r/3q7NJO)
+### 🩺 Neha – Initial Intake Form [[Form Link]](https://tally.so/r/3q7NJO)  
+<p align="none">
+  <img src="Screenshots/Neha_Tally.png" alt="Neha Intake Form" width="50%"">
+</p>
 
-![Tally.so Intake Form](Screenshots/tallyform.png)
+---
+
+### ⏰ Priya – Appointment Reminder & Reschedule Form [[Form Link]](https://tally.so/r/3jqYj9)  
+<p align="none">
+  <img src="Screenshots/Priya_Tally.png" alt="Priya Tally Form" width:50%;">
+</p>
+
+---
+
+### 📞 Anita – Post-Visit Health Check-In Form [[Form Link]](https://tally.so/r/3N99Dj)  
+<p align="none">
+  <img src="Screenshots/Anita_Tally.png" alt="Anita Tally Form" width:50%;">
+</p>
+
 
 ## 🎯 Our Agents
 
