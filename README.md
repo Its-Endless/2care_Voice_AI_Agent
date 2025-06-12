@@ -8,21 +8,21 @@ Begin the patient journey with the appropriate **Tally.so intake form** dependin
 
 ### 🩺 Neha – Initial Intake Form [[Form Link]](https://tally.so/r/3q7NJO)  
 <p align="none">
-  <img src="Screenshots/Neha_Tally.png" alt="Neha Intake Form" width="50%"">
+  <img src="Screenshots/Neha_Tally.png" alt="Neha Intake Form" width="50%">
 </p>
 
 ---
 
 ### ⏰ Priya – Appointment Reminder & Reschedule Form [[Form Link]](https://tally.so/r/3jqYj9)  
 <p align="none">
-  <img src="Screenshots/Priya_Tally.png" alt="Priya Tally Form" width:50%;">
+  <img src="Screenshots/Priya_Tally.png" alt="Priya Tally Form" width:30%;">
 </p>
 
 ---
 
 ### 📞 Anita – Post-Visit Health Check-In Form [[Form Link]](https://tally.so/r/3N99Dj)  
 <p align="none">
-  <img src="Screenshots/Anita_Tally.png" alt="Anita Tally Form" width:50%;">
+  <img src="Screenshots/Anita_Tally.png" alt="Anita Tally Form" width:10%;">
 </p>
 
 
