@@ -14,9 +14,9 @@ The patient journey begins with this **Tally.so form** where patients provide th
 
 | Agent | Phone Number | Primary Role |
 |-------|-------------|--------------|
-| **Neha** | (+1 (239) 397 2143) | Patient Onboarding & Scheduling |
-| **Priya** | (-) | Appointment Reminders & Rescheduling |
-| **Anita** | (-) | Post-Visit Care & Health Check-ins |
+| **Neha** | (+1 (858) 724 5626) | Patient Onboarding & Scheduling |
+| **Priya** | (+1 (239) 397 2143) | Appointment Reminders & Rescheduling |
+| **Anita** | (+1 (762) 701 2189) | Post-Visit Care & Health Check-ins |
 
 ## 🛠️ Tech Stack
 
